@@ -30,7 +30,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
  * Implementacao do servidor de rendezvous em REST
  */
 @Path("/users")
-public class RendezVousResources {
+public class BankServerResources {
 
     private Map<Long, User> db = new ConcurrentHashMap<>();
 
@@ -42,7 +42,7 @@ public class RendezVousResources {
         TRANSFER_MONEY
     }
 
-    RendezVousResources(int port) {
+    BankServerResources(int port) {
         replicaServer = new ReplicaServer(port == 8080 ? 0 : 1);
         serviceProxy = new ServiceProxy(port == 8080 ? 0 : 1, null);
     }

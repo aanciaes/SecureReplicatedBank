@@ -7,7 +7,7 @@ import javax.net.ssl.SSLContext;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
-public class RendezVousServer {
+public class BankServer {
 
     public static void main(String[] args) throws Exception {
         int port = 8080;
@@ -17,7 +17,7 @@ public class RendezVousServer {
         URI baseUri = UriBuilder.fromUri("https://0.0.0.0/").port(port).build();
 
         ResourceConfig config = new ResourceConfig();
-        config.register(new RendezVousResources(port));
+        config.register(new BankServerResources(port));
 
         JdkHttpServerFactory.createHttpServer(baseUri, config, SSLContext.getDefault());
 

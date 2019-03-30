@@ -51,7 +51,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
              ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
              ObjectOutput objOut = new ObjectOutputStream(byteOut)) {
 
-            RendezVousResources.Operation reqType = (RendezVousResources.Operation) objIn.readObject();
+            BankServerResources.Operation reqType = (BankServerResources.Operation) objIn.readObject();
             ApplicationResponse appRes;
 
             switch (reqType) {
