@@ -44,6 +44,7 @@ public class BankServerResources {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @SuppressWarnings("unchecked")
     public User[] endpoints() {
         try {
             byte[] reply = invokeOp(false, Operation.GET_ALL);
