@@ -57,7 +57,7 @@ public class BankServerResources {
                 if (rs.getStatusCode() != 200) {
                     throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
                 } else {
-                    Map<Long, User> body = (Map<Long, User>) rs.getBody();
+                    Map<Long, User> body = (Map) rs.getBody();
                     return body.values().toArray(new User[0]);
                 }
             }
