@@ -1,4 +1,4 @@
-package rest.server;
+package rest.server.httpHandler;
 
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;

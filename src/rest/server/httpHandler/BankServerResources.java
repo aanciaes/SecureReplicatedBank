@@ -1,8 +1,9 @@
-package rest.server;
+package rest.server.httpHandler;
 
 import bftsmart.tom.ServiceProxy;
 import rest.server.model.ApplicationResponse;
 import rest.server.model.User;
+import rest.server.replicas.ReplicaServer;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -22,35 +23,49 @@ import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
-import static javax.ws.rs.core.Response.Status.CONFLICT;
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-
 /**
  * Implementacao do servidor de rendezvous em REST
  */
 @Path("/users")
 public class BankServerResources {
 
-    private Map<Long, User> db = new ConcurrentHashMap<>();
-
-    private ReplicaServer replicaServer;
-    private ServiceProxy serviceProxy;
-
     public enum Operation {
+        GET_ALL,
         GENERATE_MONEY,
         TRANSFER_MONEY
     }
 
+    private Map<Long, User> db = new ConcurrentHashMap<>();
+    private ServiceProxy serviceProxy;
+
     BankServerResources(int port) {
-        replicaServer = new ReplicaServer(port == 8080 ? 0 : 1);
         serviceProxy = new ServiceProxy(port == 8080 ? 0 : 1, null);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public User[] endpoints() {
-        return replicaServer.listUsers();
+        try {
+            byte[] reply = invokeOp(false, Operation.GET_ALL);
+
+            if (reply.length > 0) {
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
+
+                ApplicationResponse rs = (ApplicationResponse) objIn.readObject();
+
+                if (rs.getStatusCode() != 200) {
+                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                } else {
+                    Map<Long, User> body = (Map<Long, User>) rs.getBody();
+                    return body.values().toArray(new User[0]);
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            System.out.println("Exception putting value into map: " + e.getMessage());
+        }
+        return new User[0];
     }
 
     @POST
@@ -99,7 +114,6 @@ public class BankServerResources {
                     throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
                 }
             }
-
         } catch (IOException |
                 ClassNotFoundException e) {
             e.printStackTrace();

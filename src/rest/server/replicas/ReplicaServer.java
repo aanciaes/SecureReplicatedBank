@@ -1,8 +1,9 @@
-package rest.server;
+package rest.server.replicas;
 
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
+import rest.server.httpHandler.BankServerResources;
 import rest.server.model.ApplicationResponse;
 import rest.server.model.User;
 
@@ -21,15 +22,14 @@ import java.util.logging.Logger;
 public class ReplicaServer extends DefaultSingleRecoverable {
 
     private Map<Long, User> db = new ConcurrentHashMap<>();
-
-    private ServiceReplica serviceReplica;
     private Logger logger = Logger.getLogger(ReplicaServer.class.getName());
 
-    ReplicaServer(int id) {
+    private ReplicaServer(int id) {
         db.put(1L, new User(1L, 0.0));
         db.put(2L, new User(2L, 0.0));
 
-        serviceReplica = new ServiceReplica(id, this, this);
+        new ServiceReplica(id, this, this);
+        logger.info("Replica Server #" + id + " started");
     }
 
     @Override
@@ -82,7 +82,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     break;
 
                 default:
-                    appRes = new ApplicationResponse(400, "Operation Unknown");
+                    appRes = new ApplicationResponse(400, "Operation Unknown", null);
                     objOut.writeObject(appRes);
             }
 
@@ -98,44 +98,74 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
     @Override
     public byte[] appExecuteUnordered(byte[] bytes, MessageContext messageContext) {
-        System.out.println("Executed Unordered");
-        return new byte[0];
+        byte[] reply = null;
+
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(bytes);
+             ObjectInput objIn = new ObjectInputStream(byteIn);
+             ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+             ObjectOutput objOut = new ObjectOutputStream(byteOut)) {
+
+            BankServerResources.Operation reqType = (BankServerResources.Operation) objIn.readObject();
+            ApplicationResponse appRes;
+
+            switch (reqType) {
+                case GET_ALL:
+                    logger.info("Executing unordered op: " + reqType);
+                    appRes = listUsers();
+                    objOut.writeObject(appRes);
+
+                    break;
+                default:
+                    logger.log(Level.SEVERE, "Operation Unknown");
+                    appRes = new ApplicationResponse(400, "Operation Unknown", null);
+                    objOut.writeObject(appRes);
+            }
+
+            objOut.flush();
+            byteOut.flush();
+            reply = byteOut.toByteArray();
+
+        } catch (IOException | ClassNotFoundException e) {
+            logger.log(Level.SEVERE, "Ocurred during map operation execution", e);
+        }
+
+        return reply;
     }
 
 
-    public User[] listUsers() {
-        User[] list = new User[db.size()];
-
-        return db.values().toArray(list);
+    private ApplicationResponse listUsers() {
+        return new ApplicationResponse(200, "Sucess", db);
     }
 
     private ApplicationResponse addMoney(Long id, Double amount) {
 
         if (!db.containsKey(id)) {
-            System.err.println("No money generated. User does " + id + " not exist");
-            return new ApplicationResponse(404, "User does" + id + " not exist");
+            logger.warning("No money generated. User does " + id + " not exist");
+            return new ApplicationResponse(404, "User does" + id + " not exist", null);
 
         } else {
             if (amount != null) {
-
                 if (amount > 0) {
                     User user = db.get(id);
                     user.addMoney(amount);
 
-                    return new ApplicationResponse(200, "Success");
+                    logger.info(amount + " generated to user " + user);
+                    return new ApplicationResponse(200, "Success", null);
                 } else {
-                    return new ApplicationResponse(400, "Amount must not be negative");
+                    logger.warning("No money generated. Amount must not be negative");
+                    return new ApplicationResponse(400, "Amount must not be negative", null);
                 }
             } else {
-                return new ApplicationResponse(400, "No amount exists");
+                logger.warning("Amount parameter not present");
+                return new ApplicationResponse(400, "Amount parameter not present", null);
             }
         }
     }
 
     private ApplicationResponse transferMoney(Long id, Double amount, Long destination) {
         if (!db.containsKey(id)) {
-            System.err.println("No money transferred. User does " + id + " not exist");
-            return new ApplicationResponse(404, "User does" + id + " not exist");
+            logger.warning("No money transferred. User does " + id + " not exist");
+            return new ApplicationResponse(404, "User does" + id + " not exist", null);
         } else {
             if (amount != null && destination != null) {
                 if (db.containsKey(destination)) {
@@ -147,19 +177,28 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                         to.addMoney(amount);
                         from.substractMoney(amount);
 
-                        return new ApplicationResponse(200, "Success");
+                        logger.info(amount + " transferred from " + from + "to " + destination);
+                        return new ApplicationResponse(200, "Success", null);
                     } else {
-                        System.err.println("No money transferred. No money available in account");
-                        return new ApplicationResponse(400, "No money available in account");
+                        logger.warning("No money transferred. No money available in account");
+                        return new ApplicationResponse(400, "No money available in account", null);
                     }
-
                 } else {
-                    System.err.println("No money transferred. User " + destination + " does not exist");
-                    return new ApplicationResponse(404, "No money transferred. User " + destination + " does not exist");
+                    logger.warning("No money transferred. User " + destination + " does not exist");
+                    return new ApplicationResponse(404, "No money transferred. User " + destination + " does not exist", null);
                 }
             } else {
-                return new ApplicationResponse(400, "Failure");
+                logger.warning("Bad request. Some arameters are missing");
+                return new ApplicationResponse(400, "Bad request. Some arameters are missing", null);
             }
         }
+    }
+
+    public static void main(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage: ReplicaServer <server id>");
+            System.exit(-1);
+        }
+        new ReplicaServer(Integer.parseInt(args[0]));
     }
 }
