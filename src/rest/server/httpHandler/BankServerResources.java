@@ -2,8 +2,9 @@ package rest.server.httpHandler;
 
 import bftsmart.tom.ServiceProxy;
 import rest.server.model.ApplicationResponse;
+import rest.server.model.CustomExtractor;
+import rest.server.model.ExtractorMessage;
 import rest.server.model.User;
-import rest.server.replicas.ReplicaServer;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -13,6 +14,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -20,8 +22,9 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementacao do servidor de rendezvous em REST
@@ -35,17 +38,21 @@ public class BankServerResources {
         TRANSFER_MONEY
     }
 
-    private Map<Long, User> db = new ConcurrentHashMap<>();
     private ServiceProxy serviceProxy;
+    private CustomExtractor ex;
 
+    @SuppressWarnings("unchecked")
     BankServerResources(int port) {
-        serviceProxy = new ServiceProxy(port == 8080 ? 0 : 1, null);
+        Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
+        ex = new CustomExtractor();
+
+        serviceProxy = new ServiceProxy(port == 8080 ? 0 : 1, null, cmp, ex);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
-    public User[] endpoints() {
+    public User[] listUsers() {
         try {
             byte[] reply = invokeOp(false, Operation.GET_ALL);
 
@@ -136,12 +143,27 @@ public class BankServerResources {
             objOut.flush();
             byteOut.flush();
 
-            return ordered ? serviceProxy.invokeOrdered(byteOut.toByteArray()) : serviceProxy.invokeUnordered(byteOut.toByteArray());
+            byte[] reply = ordered ? serviceProxy.invokeOrdered(byteOut.toByteArray()) : serviceProxy.invokeUnordered(byteOut.toByteArray());
+
+            if (checkQuorum()) {
+                return reply;
+            } else {
+                // No quorom
+                throw new WebApplicationException("No quorum reached for request", Response.Status.PRECONDITION_FAILED);
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
             return new byte[0];
         }
+    }
+
+    private boolean checkQuorum() {
+        int numberOfReplicas = serviceProxy.getViewManager().getCurrentViewN();
+        ExtractorMessage lastRound = ex.getLastRound();
+
+        //TODO
+        return lastRound.getTomMessages().length >= (numberOfReplicas / 2 + 1);
     }
 }
