@@ -7,11 +7,11 @@ import javax.net.ssl.SSLContext;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
-public class BankServer {
+public class WalletJdkHttpServer {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
-            System.err.println("Usage: BankServer <port> <replica id>");
+            System.err.println("Usage: WalletJdkHttpServer <port> <replica id>");
             System.exit(-1);
         }
 
@@ -21,7 +21,7 @@ public class BankServer {
         URI baseUri = UriBuilder.fromUri("https://0.0.0.0/").port(port).build();
 
         ResourceConfig config = new ResourceConfig();
-        config.register(new BankServerResources(port, replicaId));
+        config.register(new WalletServerResources(port, replicaId));
 
         JdkHttpServerFactory.createHttpServer(baseUri, config, SSLContext.getDefault());
 

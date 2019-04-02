@@ -3,7 +3,7 @@ package rest.server.replica;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
-import rest.server.httpHandler.BankServerResources;
+import rest.server.httpHandler.WalletServerResources;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.User;
 
@@ -51,7 +51,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
              ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
              ObjectOutput objOut = new ObjectOutputStream(byteOut)) {
 
-            BankServerResources.Operation reqType = (BankServerResources.Operation) objIn.readObject();
+            WalletServerResources.Operation reqType = (WalletServerResources.Operation) objIn.readObject();
             ReplicaResponse appRes;
 
             switch (reqType) {
@@ -105,12 +105,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
              ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
              ObjectOutput objOut = new ObjectOutputStream(byteOut)) {
 
-            BankServerResources.Operation reqType = (BankServerResources.Operation) objIn.readObject();
+            WalletServerResources.Operation reqType = (WalletServerResources.Operation) objIn.readObject();
             ReplicaResponse appRes;
 
             switch (reqType) {
                 case GET_ALL:
-                    logger.info("Executing unordered op: " + reqType);
                     appRes = listUsers();
                     objOut.writeObject(appRes);
 
@@ -192,13 +191,5 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 return new ReplicaResponse(400, "Bad request. Some arameters are missing", null);
             }
         }
-    }
-
-    public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("Usage: ReplicaServer <server id>");
-            System.exit(-1);
-        }
-        new ReplicaServer(Integer.parseInt(args[0]));
     }
 }

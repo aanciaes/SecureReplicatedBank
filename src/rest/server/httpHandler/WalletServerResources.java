@@ -26,10 +26,9 @@ import java.util.Comparator;
 import java.util.Map;
 
 /**
- * Implementacao do servidor de Wallet em REST
+ * Restfull resources of wallet server
  */
-@Path("/users")
-public class BankServerResources {
+public class WalletServerResources implements WalletServer {
 
     public enum Operation {
         GET_ALL,
@@ -41,7 +40,7 @@ public class BankServerResources {
     private CustomExtractor ex;
 
     @SuppressWarnings("unchecked")
-    BankServerResources(int port, int replicaId) {
+    WalletServerResources(int port, int replicaId) {
         Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
         ex = new CustomExtractor();
 
@@ -49,9 +48,7 @@ public class BankServerResources {
         serviceProxy = new ServiceProxy(replicaId, null, cmp, ex);
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @SuppressWarnings("unchecked")
+    @Override
     public User[] listUsers() {
         try {
             byte[] reply = invokeOp(false, Operation.GET_ALL);
@@ -76,11 +73,15 @@ public class BankServerResources {
         return new User[0];
     }
 
-    @POST
-    @Path("/{id}/generate")
+    @Override
+    public Double getAmount(Long id) {
+        return null;
+    }
+
+    @Override
     @SuppressWarnings("Duplicates")
-    public void generateMoney(@PathParam("id") Long id, @QueryParam("amount") Double amount) {
-        System.err.printf("--- generating: %f for user: %s\n", amount, id);
+    public void generateMoney(Long id, Double amount) {
+        System.err.printf("--- generating: %f for user: %s ---\n", amount, id);
 
         try {
             byte[] reply = invokeOp(true, Operation.GENERATE_MONEY, id, amount);
@@ -95,7 +96,6 @@ public class BankServerResources {
                     throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
                 }
             }
-
         } catch (IOException |
                 ClassNotFoundException e) {
             e.printStackTrace();
@@ -103,10 +103,9 @@ public class BankServerResources {
         }
     }
 
-    @POST
-    @Path("/{id}/transfer")
+    @Override
     @SuppressWarnings("Duplicates")
-    public void transferMoney(@PathParam("id") Long id, @QueryParam("amount") Double amount, @QueryParam("destination") Long destination) {
+    public void transferMoney(Long id, Double amount, Long destination) {
         System.err.printf("--- transfering: %f from user: %d to user: %d\n", amount, id, destination);
 
         try {
