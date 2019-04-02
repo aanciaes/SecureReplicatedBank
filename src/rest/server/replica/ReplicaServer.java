@@ -6,6 +6,7 @@ import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
 import rest.server.httpHandler.WalletServerResources;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.User;
+import rest.server.model.WalletOperationType;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -51,7 +52,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
              ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
              ObjectOutput objOut = new ObjectOutputStream(byteOut)) {
 
-            WalletServerResources.Operation reqType = (WalletServerResources.Operation) objIn.readObject();
+            WalletOperationType reqType = (WalletOperationType) objIn.readObject();
             ReplicaResponse appRes;
 
             switch (reqType) {
@@ -105,7 +106,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
              ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
              ObjectOutput objOut = new ObjectOutputStream(byteOut)) {
 
-            WalletServerResources.Operation reqType = (WalletServerResources.Operation) objIn.readObject();
+            WalletOperationType reqType = (WalletOperationType) objIn.readObject();
             ReplicaResponse appRes;
 
             switch (reqType) {

@@ -4,6 +4,7 @@ import bftsmart.tom.ServiceProxy;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.CustomExtractor;
 import rest.server.model.User;
+import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
 
 import javax.ws.rs.GET;
@@ -30,12 +31,6 @@ import java.util.Map;
  */
 public class WalletServerResources implements WalletServer {
 
-    public enum Operation {
-        GET_ALL,
-        GENERATE_MONEY,
-        TRANSFER_MONEY
-    }
-
     private ServiceProxy serviceProxy;
     private CustomExtractor ex;
 
@@ -51,7 +46,7 @@ public class WalletServerResources implements WalletServer {
     @Override
     public User[] listUsers() {
         try {
-            byte[] reply = invokeOp(false, Operation.GET_ALL);
+            byte[] reply = invokeOp(false, WalletOperationType.GET_ALL);
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -84,7 +79,7 @@ public class WalletServerResources implements WalletServer {
         System.err.printf("--- generating: %f for user: %s ---\n", amount, id);
 
         try {
-            byte[] reply = invokeOp(true, Operation.GENERATE_MONEY, id, amount);
+            byte[] reply = invokeOp(true, WalletOperationType.GENERATE_MONEY, id, amount);
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -109,7 +104,7 @@ public class WalletServerResources implements WalletServer {
         System.err.printf("--- transfering: %f from user: %d to user: %d\n", amount, id, destination);
 
         try {
-            byte[] reply = invokeOp(true, Operation.TRANSFER_MONEY, id, amount, destination);
+            byte[] reply = invokeOp(true, WalletOperationType.TRANSFER_MONEY, id, amount, destination);
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -128,7 +123,7 @@ public class WalletServerResources implements WalletServer {
         }
     }
 
-    private byte[] invokeOp(boolean ordered, Operation operation, Object... args) {
+    private byte[] invokeOp(boolean ordered, WalletOperationType operation, Object... args) {
         try (
                 ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
                 ObjectOutput objOut = new ObjectOutputStream(byteOut)) {
