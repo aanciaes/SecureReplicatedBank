@@ -1,5 +1,6 @@
 package rest.server.httpHandler;
 
+import rest.server.model.ClientResponse;
 import rest.server.model.User;
 
 import javax.ws.rs.GET;
@@ -15,7 +16,7 @@ public interface WalletServer {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    User[] listUsers();
+    ClientResponse listUsers();
 
     @GET
     @Path("/{id}")

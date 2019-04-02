@@ -1,10 +1,8 @@
 package rest.server.httpHandler;
 
 import bftsmart.tom.ServiceProxy;
-import rest.server.model.ReplicaResponse;
-import rest.server.model.CustomExtractor;
-import rest.server.model.User;
-import rest.server.model.WalletOperationType;
+import bftsmart.tom.core.messages.TOMMessage;
+import rest.server.model.*;
 import rest.server.replica.ReplicaServer;
 
 import javax.ws.rs.GET;
@@ -22,9 +20,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,9 +44,10 @@ public class WalletServerResources implements WalletServer {
     }
 
     @Override
-    public User[] listUsers() {
+    public ClientResponse listUsers() {
         try {
             byte[] reply = invokeOp(false, WalletOperationType.GET_ALL);
+            List<ReplicaResponse> replicaResponseList = convertTomMessages(ex.getLastRound().getTomMessages());
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -62,7 +59,7 @@ public class WalletServerResources implements WalletServer {
                     throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
                 } else {
                     Map<Long, User> body = (Map) rs.getBody();
-                    return body.values().toArray(new User[0]);
+                    return new ClientResponse(body, replicaResponseList);//body.values().toArray(new User[0]);
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -72,7 +69,23 @@ public class WalletServerResources implements WalletServer {
             logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
         }
-        return new User[0];
+        return new ClientResponse(null, null);
+    }
+
+    private List<ReplicaResponse> convertTomMessages(TOMMessage[] tomMessages) {
+        List<ReplicaResponse> replicaResponseList = new ArrayList<ReplicaResponse>();
+        for (TOMMessage tomMessage : tomMessages) {
+            byte[] content = tomMessage.getContent();
+            try {
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(content);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+                replicaResponseList.add(rs);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return replicaResponseList;
     }
 
     @Override
