@@ -93,6 +93,9 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
         } catch (IOException | ClassNotFoundException e) {
             logger.log(Level.SEVERE, "Ocurred during map operation execution", e);
+        } catch (Exception e){
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            e.printStackTrace();
         }
         return reply;
     }
@@ -127,6 +130,9 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
         } catch (IOException | ClassNotFoundException e) {
             logger.log(Level.SEVERE, "Ocurred during map operation execution", e);
+        } catch (Exception e){
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            e.printStackTrace();
         }
 
         return reply;

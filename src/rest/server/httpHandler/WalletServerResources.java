@@ -25,11 +25,15 @@ import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Restfull resources of wallet server
  */
 public class WalletServerResources implements WalletServer {
+
+    private Logger logger = Logger.getLogger(WalletServerResources.class.getName());
 
     private ServiceProxy serviceProxy;
     private CustomExtractor ex;
@@ -64,6 +68,9 @@ public class WalletServerResources implements WalletServer {
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
+        } catch (Exception e){
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            e.printStackTrace();
         }
         return new User[0];
     }
@@ -95,6 +102,9 @@ public class WalletServerResources implements WalletServer {
                 ClassNotFoundException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
+        } catch (Exception e){
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            e.printStackTrace();
         }
     }
 
@@ -120,6 +130,9 @@ public class WalletServerResources implements WalletServer {
                 ClassNotFoundException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
+        } catch (Exception e){
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            e.printStackTrace();
         }
     }
 
@@ -142,6 +155,10 @@ public class WalletServerResources implements WalletServer {
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
+            return new byte[0];
+        } catch (Exception e){
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            e.printStackTrace();
             return new byte[0];
         }
     }
