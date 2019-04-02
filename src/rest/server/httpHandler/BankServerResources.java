@@ -1,10 +1,10 @@
 package rest.server.httpHandler;
 
 import bftsmart.tom.ServiceProxy;
-import rest.server.model.ApplicationResponse;
+import rest.server.model.ReplicaResponse;
 import rest.server.model.CustomExtractor;
-import rest.server.model.ExtractorMessage;
 import rest.server.model.User;
+import rest.server.replica.ReplicaServer;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -14,7 +14,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,7 +26,7 @@ import java.util.Comparator;
 import java.util.Map;
 
 /**
- * Implementacao do servidor de rendezvous em REST
+ * Implementacao do servidor de Wallet em REST
  */
 @Path("/users")
 public class BankServerResources {
@@ -42,11 +41,12 @@ public class BankServerResources {
     private CustomExtractor ex;
 
     @SuppressWarnings("unchecked")
-    BankServerResources(int port) {
+    BankServerResources(int port, int replicaId) {
         Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
         ex = new CustomExtractor();
 
-        serviceProxy = new ServiceProxy(port == 8080 ? 0 : 1, null, cmp, ex);
+        new ReplicaServer(replicaId);
+        serviceProxy = new ServiceProxy(replicaId, null, cmp, ex);
     }
 
     @GET
@@ -60,7 +60,7 @@ public class BankServerResources {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
                 ObjectInput objIn = new ObjectInputStream(byteIn);
 
-                ApplicationResponse rs = (ApplicationResponse) objIn.readObject();
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
 
                 if (rs.getStatusCode() != 200) {
                     throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
@@ -89,7 +89,7 @@ public class BankServerResources {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
                 ObjectInput objIn = new ObjectInputStream(byteIn);
 
-                ApplicationResponse rs = (ApplicationResponse) objIn.readObject();
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
 
                 if (rs.getStatusCode() != 200) {
                     throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
@@ -116,7 +116,7 @@ public class BankServerResources {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
                 ObjectInput objIn = new ObjectInputStream(byteIn);
 
-                ApplicationResponse rs = (ApplicationResponse) objIn.readObject();
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
 
                 if (rs.getStatusCode() != 200) {
                     throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
@@ -143,27 +143,12 @@ public class BankServerResources {
             objOut.flush();
             byteOut.flush();
 
-            byte[] reply = ordered ? serviceProxy.invokeOrdered(byteOut.toByteArray()) : serviceProxy.invokeUnordered(byteOut.toByteArray());
-
-            if (checkQuorum()) {
-                return reply;
-            } else {
-                // No quorom
-                throw new WebApplicationException("No quorum reached for request", Response.Status.PRECONDITION_FAILED);
-            }
+            return ordered ? serviceProxy.invokeOrdered(byteOut.toByteArray()) : serviceProxy.invokeUnordered(byteOut.toByteArray());
 
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
             return new byte[0];
         }
-    }
-
-    private boolean checkQuorum() {
-        int numberOfReplicas = serviceProxy.getViewManager().getCurrentViewN();
-        ExtractorMessage lastRound = ex.getLastRound();
-
-        //TODO
-        return lastRound.getTomMessages().length >= (numberOfReplicas / 2 + 1);
     }
 }

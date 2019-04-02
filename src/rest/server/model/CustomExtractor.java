@@ -12,7 +12,6 @@ public class CustomExtractor implements Extractor {
 
     @Override
     public TOMMessage extractResponse(TOMMessage[] tomMessages, int sameContent, int lastReceived) {
-        //TODO
         lastRound = new ExtractorMessage(tomMessages, sameContent, lastReceived);
         return tomMessages[lastReceived];
     }

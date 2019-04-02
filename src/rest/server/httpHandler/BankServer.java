@@ -10,14 +10,18 @@ import java.net.URI;
 public class BankServer {
 
     public static void main(String[] args) throws Exception {
-        int port = 8080;
-        if (args.length > 0)
-            port = Integer.parseInt(args[0]);
+        if (args.length < 2) {
+            System.err.println("Usage: BankServer <port> <replica id>");
+            System.exit(-1);
+        }
+
+        int port = Integer.parseInt(args[0]);
+        int replicaId = Integer.parseInt(args[1]);
 
         URI baseUri = UriBuilder.fromUri("https://0.0.0.0/").port(port).build();
 
         ResourceConfig config = new ResourceConfig();
-        config.register(new BankServerResources(port));
+        config.register(new BankServerResources(port, replicaId));
 
         JdkHttpServerFactory.createHttpServer(baseUri, config, SSLContext.getDefault());
 

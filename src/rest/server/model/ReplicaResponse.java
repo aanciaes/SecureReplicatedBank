@@ -2,16 +2,16 @@ package rest.server.model;
 
 import java.io.Serializable;
 
-public class ApplicationResponse implements Serializable {
+public class ReplicaResponse implements Serializable {
 
     private int statusCode;
     private String message;
     private Object body;
 
-    public ApplicationResponse() {
+    public ReplicaResponse() {
     }
 
-    public ApplicationResponse(int statusCode, String message, Object body) {
+    public ReplicaResponse(int statusCode, String message, Object body) {
         this.statusCode = statusCode;
         this.message = message;
         this.body = body;
