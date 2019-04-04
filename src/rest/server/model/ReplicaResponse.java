@@ -1,12 +1,17 @@
 package rest.server.model;
 
 import java.io.Serializable;
+import java.util.Base64;
 
 public class ReplicaResponse implements Serializable {
 
     private int statusCode;
     private String message;
     private Object body;
+
+    // Client check
+    private byte[] serializedMessage;
+    private byte[] signature;
 
     public ReplicaResponse() {
     }
@@ -39,5 +44,21 @@ public class ReplicaResponse implements Serializable {
 
     public void setBody(Object body) {
         this.body = body;
+    }
+
+    public String getSerializedMessage() {
+        return Base64.getEncoder().encodeToString(serializedMessage);
+    }
+
+    public void setSerializedMessage(byte[] serializedMessage) {
+        this.serializedMessage = serializedMessage;
+    }
+
+    public String getSignature() {
+        return Base64.getEncoder().encodeToString(signature);
+    }
+
+    public void setSignature(byte[] signature) {
+        this.signature = signature;
     }
 }

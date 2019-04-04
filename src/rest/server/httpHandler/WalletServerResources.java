@@ -34,24 +34,23 @@ public class WalletServerResources implements WalletServer {
     private Logger logger = Logger.getLogger(WalletServerResources.class.getName());
 
     private ServiceProxy serviceProxy;
-    private CustomExtractor ex;
-    private KeyLoader kl;
+    private CustomExtractor exractor;
 
     @SuppressWarnings("unchecked")
     WalletServerResources(int port, int replicaId) {
         Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
-        kl = new RSAKeyLoader(replicaId, "config", false, "SHA256withRSA");
-        ex = new CustomExtractor(kl);
+        KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA256withRSA");
+        exractor = new CustomExtractor();
 
         new ReplicaServer(replicaId);
-        serviceProxy = new ServiceProxy(replicaId, null, cmp, ex, kl);
+        serviceProxy = new ServiceProxy(replicaId, null, cmp, exractor, keyLoader);
     }
 
     @Override
     public ClientResponse listUsers() {
         try {
             byte[] reply = invokeOp(false, WalletOperationType.GET_ALL);
-            List<ReplicaResponse> replicaResponseList = convertTomMessages(ex.getLastRound().getTomMessages());
+            List<ReplicaResponse> replicaResponseList = convertTomMessages(exractor.getLastRound().getTomMessages());
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -74,22 +73,6 @@ public class WalletServerResources implements WalletServer {
             e.printStackTrace();
         }
         return new ClientResponse(null, null);
-    }
-
-    private List<ReplicaResponse> convertTomMessages(TOMMessage[] tomMessages) {
-        List<ReplicaResponse> replicaResponseList = new ArrayList<ReplicaResponse>();
-        for (TOMMessage tomMessage : tomMessages) {
-            byte[] content = tomMessage.getContent();
-            try {
-                ByteArrayInputStream byteIn = new ByteArrayInputStream(content);
-                ObjectInput objIn = new ObjectInputStream(byteIn);
-                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
-                replicaResponseList.add(rs);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return replicaResponseList;
     }
 
     @Override
@@ -178,5 +161,26 @@ public class WalletServerResources implements WalletServer {
             e.printStackTrace();
             return new byte[0];
         }
+    }
+
+    private List<ReplicaResponse> convertTomMessages(TOMMessage[] tomMessages) {
+        List<ReplicaResponse> replicaResponseList = new ArrayList<ReplicaResponse>();
+        for (TOMMessage tomMessage : tomMessages) {
+            byte[] content = tomMessage.getContent();
+            try {
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(content);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+                // Set serialized message and signature to client response
+                rs.setSerializedMessage(tomMessage.serializedMessage);
+                rs.setSignature(tomMessage.serializedMessageSignature);
+
+                replicaResponseList.add(rs);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return replicaResponseList;
     }
 }
