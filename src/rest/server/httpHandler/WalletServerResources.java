@@ -1,7 +1,9 @@
 package rest.server.httpHandler;
 
+import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
+import bftsmart.tom.util.KeyLoader;
 import rest.server.model.*;
 import rest.server.replica.ReplicaServer;
 
@@ -33,14 +35,16 @@ public class WalletServerResources implements WalletServer {
 
     private ServiceProxy serviceProxy;
     private CustomExtractor ex;
+    private KeyLoader kl;
 
     @SuppressWarnings("unchecked")
     WalletServerResources(int port, int replicaId) {
         Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
-        ex = new CustomExtractor();
+        kl = new RSAKeyLoader(replicaId, "config", false, "SHA256withRSA");
+        ex = new CustomExtractor(kl);
 
         new ReplicaServer(replicaId);
-        serviceProxy = new ServiceProxy(replicaId, null, cmp, ex);
+        serviceProxy = new ServiceProxy(replicaId, null, cmp, ex, kl);
     }
 
     @Override
