@@ -10,6 +10,7 @@ public class ReplicaResponse implements Serializable {
     private Object body;
 
     // Client check
+    private int replicaId;
     private byte[] serializedMessage;
     private byte[] signature;
 
@@ -60,5 +61,13 @@ public class ReplicaResponse implements Serializable {
 
     public void setSignature(byte[] signature) {
         this.signature = signature;
+    }
+
+    public int getReplicaId() {
+        return replicaId;
+    }
+
+    public void setReplicaId(int replicaId) {
+        this.replicaId = replicaId;
     }
 }

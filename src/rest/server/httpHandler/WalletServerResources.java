@@ -173,6 +173,7 @@ public class WalletServerResources implements WalletServer {
                 ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
 
                 // Set serialized message and signature to client response
+                rs.setReplicaId(tomMessage.getSender());
                 rs.setSerializedMessage(tomMessage.serializedMessage);
                 rs.setSignature(tomMessage.serializedMessageSignature);
 
