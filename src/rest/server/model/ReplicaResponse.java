@@ -13,14 +13,16 @@ public class ReplicaResponse implements Serializable {
     private int replicaId;
     private byte[] serializedMessage;
     private byte[] signature;
+    private long nonce;
 
     public ReplicaResponse() {
     }
 
-    public ReplicaResponse(int statusCode, String message, Object body) {
+    public ReplicaResponse(int statusCode, String message, Object body, long nonce) {
         this.statusCode = statusCode;
         this.message = message;
         this.body = body;
+        this.nonce = nonce;
     }
 
     public int getStatusCode() {
@@ -69,5 +71,13 @@ public class ReplicaResponse implements Serializable {
 
     public void setReplicaId(int replicaId) {
         this.replicaId = replicaId;
+    }
+
+    public long getNonce() {
+        return nonce;
+    }
+
+    public void setNonce(long nonce) {
+        this.nonce = nonce;
     }
 }

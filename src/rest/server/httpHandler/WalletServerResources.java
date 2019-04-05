@@ -4,17 +4,14 @@ import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
-import rest.server.model.*;
+import rest.server.model.ClientResponse;
+import rest.server.model.CustomExtractor;
+import rest.server.model.ReplicaResponse;
+import rest.server.model.User;
+import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,7 +19,13 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.util.*;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,7 +52,7 @@ public class WalletServerResources implements WalletServer {
     @Override
     public ClientResponse listUsers() {
         try {
-            byte[] reply = invokeOp(false, WalletOperationType.GET_ALL);
+            byte[] reply = invokeOp(false, WalletOperationType.GET_ALL, generateNonce());
             List<ReplicaResponse> replicaResponseList = convertTomMessages(exractor.getLastRound().getTomMessages());
 
             if (reply.length > 0) {
@@ -68,7 +71,7 @@ public class WalletServerResources implements WalletServer {
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
         }
@@ -86,7 +89,7 @@ public class WalletServerResources implements WalletServer {
         System.err.printf("--- generating: %f for user: %s ---\n", amount, id);
 
         try {
-            byte[] reply = invokeOp(true, WalletOperationType.GENERATE_MONEY, id, amount);
+            byte[] reply = invokeOp(true, WalletOperationType.GENERATE_MONEY, id, amount, generateNonce());
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -102,7 +105,7 @@ public class WalletServerResources implements WalletServer {
                 ClassNotFoundException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
         }
@@ -114,7 +117,7 @@ public class WalletServerResources implements WalletServer {
         System.err.printf("--- transfering: %f from user: %d to user: %d\n", amount, id, destination);
 
         try {
-            byte[] reply = invokeOp(true, WalletOperationType.TRANSFER_MONEY, id, amount, destination);
+            byte[] reply = invokeOp(true, WalletOperationType.TRANSFER_MONEY, id, amount, destination, generateNonce());
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -130,7 +133,7 @@ public class WalletServerResources implements WalletServer {
                 ClassNotFoundException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
         }
@@ -156,7 +159,7 @@ public class WalletServerResources implements WalletServer {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
             return new byte[0];
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
             return new byte[0];
@@ -183,5 +186,12 @@ public class WalletServerResources implements WalletServer {
             }
         }
         return replicaResponseList;
+    }
+
+    private long generateNonce() {
+        // create instance of SecureRandom class
+        SecureRandom rand = new SecureRandom();
+
+        return rand.nextLong();
     }
 }
