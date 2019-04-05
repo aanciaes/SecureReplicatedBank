@@ -37,23 +37,23 @@ public class WalletServerResources implements WalletServer {
     private Logger logger = Logger.getLogger(WalletServerResources.class.getName());
 
     private ServiceProxy serviceProxy;
-    private CustomExtractor exractor;
+    private CustomExtractor extractor;
 
     @SuppressWarnings("unchecked")
     WalletServerResources(int port, int replicaId) {
         Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
         KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA512withRSA");
-        exractor = new CustomExtractor();
+        extractor = new CustomExtractor();
 
         new ReplicaServer(replicaId);
-        serviceProxy = new ServiceProxy(replicaId, null, cmp, exractor, keyLoader);
+        serviceProxy = new ServiceProxy(replicaId, null, cmp, extractor, keyLoader);
     }
 
     @Override
     public ClientResponse listUsers() {
         try {
             byte[] reply = invokeOp(false, WalletOperationType.GET_ALL, generateNonce());
-            List<ReplicaResponse> replicaResponseList = convertTomMessages(exractor.getLastRound().getTomMessages());
+            List<ReplicaResponse> replicaResponseList = convertTomMessages(extractor.getLastRound().getTomMessages());
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);

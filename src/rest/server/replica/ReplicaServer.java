@@ -14,6 +14,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.security.PublicKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -21,12 +22,14 @@ import java.util.logging.Logger;
 
 public class ReplicaServer extends DefaultSingleRecoverable {
 
-    private Map<Long, User> db = new ConcurrentHashMap<>();
+    private Map<PublicKey, User> db = new ConcurrentHashMap<>();
     private Logger logger = Logger.getLogger(ReplicaServer.class.getName());
 
     public ReplicaServer(int id) {
-        db.put(1L, new User(1L, 0.0));
-        db.put(2L, new User(2L, 0.0));
+        User u1 = new User(1, 0.0);
+        User u2 = new User(2, 0.0);
+        db.put(u1.getPublicKey(), u1);
+        db.put(u2.getPublicKey(), u2);
 
         new ServiceReplica(id, this, this);
         logger.info("Replica Server #" + id + " started");

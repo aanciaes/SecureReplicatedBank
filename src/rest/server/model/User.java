@@ -1,23 +1,30 @@
 package rest.server.model;
 
+import bftsmart.reconfiguration.util.RSAKeyLoader;
+import bftsmart.tom.util.KeyLoader;
+
 import java.io.Serializable;
+import java.security.PublicKey;
 
 public class User implements Serializable {
 
-    private Long userId;
+    private PublicKey pubK;
     private Double amount;
 
-    public User(Long userId, Double amount) {
-        this.userId = userId;
+    public User(int userId, Double amount){
+
         this.amount = amount;
+        KeyLoader keyLoader = new RSAKeyLoader(userId + 1000, "config", false, "SHA256withRSA");
+
+        try {
+            this.pubK = keyLoader.loadPublicKey(userId + 1000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public PublicKey getPublicKey() {
+        return this.pubK;
     }
 
     public Double getAmount() {
