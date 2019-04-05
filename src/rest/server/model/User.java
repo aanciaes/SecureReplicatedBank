@@ -12,15 +12,8 @@ public class User implements Serializable {
     private Double amount;
 
     public User(int userId, Double amount){
-
         this.amount = amount;
-        KeyLoader keyLoader = new RSAKeyLoader(userId + 1000, "config", false, "SHA256withRSA");
 
-        try {
-            this.pubK = keyLoader.loadPublicKey(userId + 1000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public PublicKey getPublicKey() {

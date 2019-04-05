@@ -4,11 +4,7 @@ import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
-import rest.server.model.ClientResponse;
-import rest.server.model.CustomExtractor;
-import rest.server.model.ReplicaResponse;
-import rest.server.model.User;
-import rest.server.model.WalletOperationType;
+import rest.server.model.*;
 import rest.server.replica.ReplicaServer;
 
 import javax.ws.rs.WebApplicationException;
@@ -113,9 +109,10 @@ public class WalletServerResources implements WalletServer {
 
     @Override
     @SuppressWarnings("Duplicates")
-    public void transferMoney(Long id, Double amount, Long destination) {
-        System.err.printf("--- transfering: %f from user: %d to user: %d\n", amount, id, destination);
+    public void transferMoney(ClientTransferRequest cliRequest) {
 
+        System.err.printf("--- transfering: %f from user: %s to user: %s\n", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey());
+/*
         try {
             byte[] reply = invokeOp(true, WalletOperationType.TRANSFER_MONEY, id, amount, destination, generateNonce());
 
@@ -137,6 +134,7 @@ public class WalletServerResources implements WalletServer {
             logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
         }
+        */
     }
 
     private byte[] invokeOp(boolean ordered, WalletOperationType operation, Object... args) {

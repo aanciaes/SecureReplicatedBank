@@ -3,6 +3,7 @@ package rest.server.replica;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
+import rest.server.model.ClientTransferRequest;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.User;
 import rest.server.model.WalletOperationType;
@@ -22,15 +23,14 @@ import java.util.logging.Logger;
 
 public class ReplicaServer extends DefaultSingleRecoverable {
 
-    private Map<PublicKey, User> db = new ConcurrentHashMap<>();
+    private Map<String, Double> db = new ConcurrentHashMap<>();
     private Logger logger = Logger.getLogger(ReplicaServer.class.getName());
 
     public ReplicaServer(int id) {
-        User u1 = new User(1, 0.0);
+        /*User u1 = new User(1, 0.0);
         User u2 = new User(2, 0.0);
         db.put(u1.getPublicKey(), u1);
-        db.put(u2.getPublicKey(), u2);
-
+        db.put(u2.getPublicKey(), u2);*/
         new ServiceReplica(id, this, this);
         logger.info("Replica Server #" + id + " started");
     }
@@ -81,7 +81,9 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     destination = (Long) objIn.readObject();
                     long nonceTansfer = (Long) objIn.readObject();
 
-                    appRes = transferMoney(idTransfer, amountTransfer, destination, nonceTansfer);
+                    ClientTransferRequest cliRequest = new ClientTransferRequest();
+
+                    appRes = transferMoney(cliRequest);
                     objOut.writeObject(appRes);
 
                     break;
@@ -150,7 +152,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     }
 
     private ReplicaResponse addMoney(Long id, Double amount, long nonce) {
-
+/*
         if (!db.containsKey(id)) {
             logger.warning("No money generated. User does " + id + " not exist");
             return new ReplicaResponse(404, "User does" + id + " not exist", null, 0L);
@@ -172,9 +174,13 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 return new ReplicaResponse(400, "Amount parameter not present", null, 0L);
             }
         }
+         */
+        return null;
     }
 
-    private ReplicaResponse transferMoney(Long id, Double amount, Long destination, long nonce) {
+    private ReplicaResponse transferMoney(ClientTransferRequest cliRequest) {
+
+        /*
         if (!db.containsKey(id)) {
             logger.warning("No money transferred. User does " + id + " not exist");
             return new ReplicaResponse(404, "User does" + id + " not exist", null, 0L);
@@ -203,6 +209,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 logger.warning("Bad request. Some arameters are missing");
                 return new ReplicaResponse(400, "Bad request. Some arameters are missing", null, 0L);
             }
-        }
+        }*/
+        return null;
     }
 }
