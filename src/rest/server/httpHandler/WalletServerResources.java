@@ -42,7 +42,7 @@ public class WalletServerResources implements WalletServer {
     @SuppressWarnings("unchecked")
     WalletServerResources(int port, int replicaId) {
         Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
-        KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA256withRSA");
+        KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA512withRSA");
         exractor = new CustomExtractor();
 
         new ReplicaServer(replicaId);
