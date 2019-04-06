@@ -7,6 +7,7 @@ import bftsmart.tom.util.KeyLoader;
 import rest.server.model.*;
 import rest.server.replica.ReplicaServer;
 
+import javax.crypto.Cipher;
 import javax.ws.rs.WebApplicationException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -16,12 +17,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
+import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -112,7 +113,28 @@ public class WalletServerResources implements WalletServer {
     public void transferMoney(ClientTransferRequest cliRequest) {
 
         System.err.printf("--- transfering: %f from user: %s to user: %s\n", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey());
-/*
+
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-512");
+            digest.update(cliRequest.getSerializeMessage().getBytes());
+            byte[] hashMessage = digest.digest();
+
+            byte[] byteKey = Base64.getDecoder().decode(cliRequest.getFromPubKey());
+            X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+
+            PublicKey fromPublicKey = kf.generatePublic(X509publicKey);
+
+            Cipher c = Cipher.getInstance("RSA", "SunJCE");
+            c.init(Cipher.DECRYPT_MODE, fromPublicKey);
+            byte[] decryptedHash = c.doFinal(Base64.getDecoder().decode(cliRequest.getSignature()));
+            System.out.println(Base64.getEncoder().encodeToString(hashMessage));
+            System.out.println(Base64.getEncoder().encodeToString(decryptedHash));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        /*
         try {
             byte[] reply = invokeOp(true, WalletOperationType.TRANSFER_MONEY, id, amount, destination, generateNonce());
 

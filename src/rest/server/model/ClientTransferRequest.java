@@ -38,4 +38,28 @@ public class ClientTransferRequest {
     public String getSignature() {
         return signature;
     }
+
+    public void setFromPubKey(String fromPubKey) {
+        this.fromPubKey = fromPubKey;
+    }
+
+    public void setToPubKey(String toPubKey) {
+        this.toPubKey = toPubKey;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
+    }
+
+    public void setNonce(Long nonce) {
+        this.nonce = nonce;
+    }
+
+    public void setSignature(String signature) {
+        this.signature = signature;
+    }
+
+    public String getSerializeMessage(){
+        return fromPubKey + "," + toPubKey + "," + amount + ":" + nonce;
+    }
 }
