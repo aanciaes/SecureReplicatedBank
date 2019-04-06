@@ -4,12 +4,17 @@ import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
-import rest.server.model.*;
+import rest.server.model.ClientResponse;
+import rest.server.model.ClientTransferRequest;
+import rest.server.model.CustomExtractor;
+import rest.server.model.ReplicaResponse;
+import rest.server.model.User;
+import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
 
 import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,10 +22,17 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.math.BigInteger;
-import java.security.*;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,15 +74,18 @@ public class WalletServerResources implements WalletServer {
                     Map<Long, User> body = (Map) rs.getBody();
                     return new ClientResponse(body, replicaResponseList);//body.values().toArray(new User[0]);
                 }
+            } else {
+                throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             System.out.println("Exception putting value into map: " + e.getMessage());
+            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
+            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
-        return new ClientResponse(null, null);
     }
 
     @Override
@@ -109,46 +124,41 @@ public class WalletServerResources implements WalletServer {
     @Override
     @SuppressWarnings("Duplicates")
     public void transferMoney(ClientTransferRequest cliRequest) {
-
         System.err.printf("--- transfering: %f from user: %s to user: %s\n", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey());
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
             PublicKey fromPublicKey = generatePublicKeyFromString(cliRequest.getFromPubKey());
-            byte [] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
+            byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
 
             if (Arrays.equals(hashMessage, decryptedHash)) {
-                System.out.println("ALL OK");
-            }
-            else {
-                System.out.println("ALL NOT OK");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        /*
-        try {
-            byte[] reply = invokeOp(true, WalletOperationType.TRANSFER_MONEY, id, amount, destination, generateNonce());
+                byte[] reply = invokeOp(
+                        true,
+                        WalletOperationType.TRANSFER_MONEY,
+                        cliRequest.getFromPubKey(),
+                        cliRequest.getAmount(),
+                        cliRequest.getToPubKey(),
+                        generateNonce()
+                );
 
-            if (reply.length > 0) {
-                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
-                ObjectInput objIn = new ObjectInputStream(byteIn);
+                if (reply.length > 0) {
+                    ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                    ObjectInput objIn = new ObjectInputStream(byteIn);
 
-                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+                    ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
 
-                if (rs.getStatusCode() != 200) {
-                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                    if (rs.getStatusCode() != 200) {
+                        throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                    } else {
+                        //
+                    }
                 }
+            } else {
+                throw new WebApplicationException("Forbidden", Response.Status.FORBIDDEN);
             }
-        } catch (IOException |
-                ClassNotFoundException e) {
-            e.printStackTrace();
-            System.out.println("Exception putting value into map: " + e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
         }
-        */
     }
 
     private byte[] invokeOp(boolean ordered, WalletOperationType operation, Object... args) {
@@ -219,7 +229,7 @@ public class WalletServerResources implements WalletServer {
         return null;
     }
 
-    private PublicKey generatePublicKeyFromString(String key){
+    private PublicKey generatePublicKeyFromString(String key) {
 
         try {
             byte[] byteKey = Base64.getDecoder().decode(key);
@@ -234,7 +244,7 @@ public class WalletServerResources implements WalletServer {
         return null;
     }
 
-    private byte[] decryptRequest(PublicKey pubk, byte[] data){
+    private byte[] decryptRequest(PublicKey pubk, byte[] data) {
         try {
             Cipher c = Cipher.getInstance("RSA", "SunJCE");
             c.init(Cipher.DECRYPT_MODE, pubk);
@@ -242,6 +252,6 @@ public class WalletServerResources implements WalletServer {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return  null;
+        return null;
     }
 }
