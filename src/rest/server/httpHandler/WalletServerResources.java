@@ -4,6 +4,7 @@ import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
+import rest.client.AdminKeyLoader;
 import rest.server.model.*;
 import rest.server.replica.ReplicaServer;
 
@@ -100,7 +101,7 @@ public class WalletServerResources implements WalletServer {
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
-            PublicKey fromPublicKey = generatePublicKeyFromString("ADMIN KEY");
+            PublicKey fromPublicKey = AdminKeyLoader.loadPublicKey();
             byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
 
             if (Arrays.equals(hashMessage, decryptedHash)) {
@@ -108,9 +109,7 @@ public class WalletServerResources implements WalletServer {
                 byte[] reply = invokeOp(
                         true,
                         WalletOperationType.GENERATE_MONEY,
-                        cliRequest.getToPubKey(),
-                        cliRequest.getAmount(),
-                        cliRequest.getToPubKey(),
+                        cliRequest,
                         nonce
                 );
 
@@ -147,9 +146,7 @@ public class WalletServerResources implements WalletServer {
                 byte[] reply = invokeOp(
                         true,
                         WalletOperationType.TRANSFER_MONEY,
-                        cliRequest.getFromPubKey(),
-                        cliRequest.getAmount(),
-                        cliRequest.getToPubKey(),
+                        cliRequest,
                         nonce
                 );
 

@@ -9,14 +9,16 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Base64;
 
 public class AddMoneyClient {
     @SuppressWarnings("Duplicates")
-    public static void addMoney(WebTarget target, KeyPair kp, Double amount) {
+    public static void addMoney(WebTarget target, PrivateKey privk, PublicKey pubk, Double amount) {
 
         try {
-            String toPubkString = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
+            String toPubkString = Base64.getEncoder().encodeToString(pubk.getEncoded());
 
             ClientAddMoneyRequest clientRequest = new ClientAddMoneyRequest();
             clientRequest.setToPubKey(toPubkString);
@@ -26,7 +28,7 @@ public class AddMoneyClient {
             clientRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(clientRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(kp.getPrivate(), hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage(privk, hashedMessage);
 
             clientRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 
