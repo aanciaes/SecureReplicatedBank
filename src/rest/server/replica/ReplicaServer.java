@@ -175,7 +175,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 db.put(cliRequest.getFromPubKey(), fromBalance - cliRequest.getAmount());
                 db.put(cliRequest.getToPubKey(), toBalance + cliRequest.getAmount());
 
-                logger.info("New Balance -> " + cliRequest.getAmount());
+                //logger.info("New Balance -> " + cliRequest.getAmount());
                 System.out.println(db);
                 return new ReplicaResponse(200, "Success", fromBalance, nonce / 2 + 1);
             } else {
