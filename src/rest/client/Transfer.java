@@ -7,6 +7,9 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 import javax.crypto.Cipher;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -18,8 +21,10 @@ import rest.server.model.ClientTransferRequest;
 public class Transfer {
 
     public static void main(String[] args) throws IOException {
-        ClientConfig config = new ClientConfig();
-        Client client = ClientBuilder.newClient(config);
+
+        Client client = ClientBuilder.newBuilder()
+                .hostnameVerifier(new InsecureHostnameVerifier())
+                .build();
 
         URI baseURI = UriBuilder.fromUri("https://0.0.0.0:8080/").build();
 
@@ -66,6 +71,13 @@ public class Transfer {
         SecureRandom rand = new SecureRandom();
 
         return rand.nextLong();
+    }
+
+    static public class InsecureHostnameVerifier implements  HostnameVerifier{
+        @Override
+        public boolean verify(String hostname, SSLSession session){
+            return true;
+        }
     }
 }
 
