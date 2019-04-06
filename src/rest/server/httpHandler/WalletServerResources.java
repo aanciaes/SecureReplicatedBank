@@ -5,12 +5,17 @@ import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
 import rest.client.AdminKeyLoader;
-import rest.server.model.*;
+import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientResponse;
+import rest.server.model.ClientTransferRequest;
+import rest.server.model.CustomExtractor;
+import rest.server.model.ReplicaResponse;
+import rest.server.model.User;
+import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
 
 import javax.crypto.Cipher;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -23,8 +28,9 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,37 +102,48 @@ public class WalletServerResources implements WalletServer {
 
     @Override
     @SuppressWarnings("Duplicates")
-    public void generateMoney(HttpHeaders headers, ClientAddMoneyRequest cliRequest) {
+    public ClientResponse generateMoney(HttpHeaders headers, ClientAddMoneyRequest cliRequest) {
         System.err.printf("--- generating: %f for user: %s ---\n", cliRequest.getAmount(), cliRequest.getToPubKey());
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
-            PublicKey fromPublicKey = AdminKeyLoader.loadPublicKey();
+            PublicKey fromPublicKey = AdminKeyLoader.loadPublicKey(); // Only admin user can perform this operation
             byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
 
-            if (Arrays.equals(hashMessage, decryptedHash)) {
-                Long nonce = getNonceFromHeader(headers);
-                byte[] reply = invokeOp(
-                        true,
-                        WalletOperationType.GENERATE_MONEY,
-                        cliRequest,
-                        nonce
-                );
-
-                if (reply.length > 0) {
-                    ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
-                    ObjectInput objIn = new ObjectInputStream(byteIn);
-
-                    ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
-
-                    if (rs.getStatusCode() != 200) {
-                        throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
-                    }
-                }
+            // Could not decrypt hash from message
+            if (decryptedHash == null) {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
-        } catch (Exception e) {
+            // Comparing hashes. If not equal, message has been tampered with
+            if (!Arrays.equals(hashMessage, decryptedHash)) {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+
+            Long nonce = getNonceFromHeader(headers);
+            byte[] reply = invokeOp(
+                    true,
+                    WalletOperationType.GENERATE_MONEY,
+                    cliRequest,
+                    nonce
+            );
+
+            // Reply from the replicas
+            ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+            ObjectInput objIn = new ObjectInputStream(byteIn);
+
+            ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+            if (rs.getStatusCode() != 200) {
+                throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+            }
+
+            List<ReplicaResponse> replicaResponses = convertTomMessages(extractor.getLastRound().getTomMessages());
+            return new ClientResponse(rs.getBody(), replicaResponses);
+
+        } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
+            throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 

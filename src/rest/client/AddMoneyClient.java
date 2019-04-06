@@ -2,7 +2,9 @@ package rest.client;
 
 import com.google.gson.Gson;
 import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientResponse;
 import rest.server.model.ClientTransferRequest;
+import rest.server.model.ReplicaResponse;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -15,10 +17,10 @@ import java.util.Base64;
 
 public class AddMoneyClient {
     @SuppressWarnings("Duplicates")
-    public static void addMoney(WebTarget target, PrivateKey privk, PublicKey pubk, Double amount) {
+    public static void addMoney(WebTarget target, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, Double amount) {
 
         try {
-            String toPubkString = Base64.getEncoder().encodeToString(pubk.getEncoded());
+            String toPubkString = Base64.getEncoder().encodeToString(destinationPublicKey.getEncoded());
 
             ClientAddMoneyRequest clientRequest = new ClientAddMoneyRequest();
             clientRequest.setToPubKey(toPubkString);
@@ -28,17 +30,35 @@ public class AddMoneyClient {
             clientRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(clientRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(privk, hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage(adminPrivateKey, hashedMessage);
 
             clientRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 
             Gson gson = new Gson();
             String json = gson.toJson(clientRequest);
 
-            Response response = target.path("/wallet/generate").request().header("nonce", Utils.generateNonce())
+            Response response = target.path("/generate").request().header("nonce", Utils.generateNonce())
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
-            System.out.println(response.getStatus());
+
+
+            int status = response.getStatus();
+            System.out.println("Response Status: " + status);
+
+            if (status == 200) {
+                ClientResponse clientResponse = response.readEntity(ClientResponse.class);
+                System.out.println("Amount Added: " + clientResponse.getBody());
+
+                for (ReplicaResponse replicaResponse : clientResponse.getResponses()) {
+                    //TODO: Check signatures and nonces
+                    System.out.println("\t" + replicaResponse.getReplicaId());
+                    System.out.println("\t" + replicaResponse.getStatusCode());
+                    System.out.println("\t" + replicaResponse.getBody());
+                    System.out.println();
+                }
+            } else {
+                System.out.println(response.getStatusInfo().getReasonPhrase());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

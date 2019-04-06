@@ -144,6 +144,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
     private ReplicaResponse addMoney(ClientAddMoneyRequest cliRequest, Long nonce) {
 
+        // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
             db.put(cliRequest.getToPubKey(), 0.0);
         }
@@ -151,7 +152,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             db.put(cliRequest.getToPubKey(), db.get(cliRequest.getToPubKey()) + cliRequest.getAmount());
 
             logger.info(cliRequest.getAmount() + " generated to user " + cliRequest.getToPubKey());
-            return new ReplicaResponse(200, "Success", cliRequest.getAmount(), nonce/2 + 1);
+            return new ReplicaResponse(200, "Success", cliRequest.getAmount(), nonce + 1);
         } else {
             logger.warning("No money generated. Amount must not be negative");
             return new ReplicaResponse(400, "Amount must not be negative", null, 0L);

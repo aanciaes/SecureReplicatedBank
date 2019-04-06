@@ -23,7 +23,8 @@ public interface WalletServer {
 
     @POST
     @Path("/generate")
-    void generateMoney(@Context HttpHeaders headers, ClientAddMoneyRequest cliRequest);
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientResponse generateMoney(@Context HttpHeaders headers, ClientAddMoneyRequest cliRequest);
 
     @POST
     @Path("/transfer")
