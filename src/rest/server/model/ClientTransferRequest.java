@@ -1,6 +1,8 @@
 package rest.server.model;
 
-public class ClientTransferRequest {
+import java.io.Serializable;
+
+public class ClientTransferRequest implements Serializable {
 
     private String fromPubKey;
     private String toPubKey;

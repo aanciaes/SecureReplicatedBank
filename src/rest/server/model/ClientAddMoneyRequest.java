@@ -1,6 +1,8 @@
 package rest.server.model;
 
-public class ClientAddMoneyRequest {
+import java.io.Serializable;
+
+public class ClientAddMoneyRequest implements Serializable {
     private String toPubKey;
     private Double amount;
     private Long nonce;
