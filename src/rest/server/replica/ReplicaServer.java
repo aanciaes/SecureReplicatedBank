@@ -170,13 +170,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 }
 
                 Double fromBalance = db.get(cliRequest.getFromPubKey());
-                Double toBalance = db.get(cliRequest.getToPubKey());
 
                 if (fromBalance - cliRequest.getAmount() >= 0) {
-                    db.put(cliRequest.getFromPubKey(), fromBalance - cliRequest.getAmount());
-                    db.put(cliRequest.getToPubKey(), toBalance + cliRequest.getAmount());
+                    performAtomicTransfer(cliRequest.getFromPubKey(), cliRequest.getToPubKey(), cliRequest.getAmount());
 
-                    logger.info("Balance after transfer " + cliRequest.getAmount());
+                    logger.info("Balance after transfer " + db.get(cliRequest.getFromPubKey()));
                     return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1);
                 } else {
                     logger.warning("No money transferred. No money available in account");
@@ -187,5 +185,20 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 return new ReplicaResponse(400, "Amount must not be negative", null, 0L);
             }
         }
+    }
+
+    /**
+     * Performs the actual money transferring in an "atomic" way
+     *
+     * @param from   Public key of the source user
+     * @param to     Public key of the destination user
+     * @param amount Amount to transfer
+     */
+    private synchronized void performAtomicTransfer(String from, String to, Double amount) {
+        Double fromBalance = db.get(from);
+        Double toBalance = db.get(to);
+
+        db.put(from, fromBalance - amount);
+        db.put(to, toBalance + amount);
     }
 }
