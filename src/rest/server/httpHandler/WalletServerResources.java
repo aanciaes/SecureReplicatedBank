@@ -8,6 +8,7 @@ import rest.server.model.*;
 import rest.server.replica.ReplicaServer;
 
 import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import javax.ws.rs.WebApplicationException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -17,10 +18,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
-import java.security.KeyFactory;
-import java.security.MessageDigest;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.logging.Level;
@@ -115,22 +113,16 @@ public class WalletServerResources implements WalletServer {
         System.err.printf("--- transfering: %f from user: %s to user: %s\n", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey());
 
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-512");
-            digest.update(cliRequest.getSerializeMessage().getBytes());
-            byte[] hashMessage = digest.digest();
+            byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
+            PublicKey fromPublicKey = generatePublicKeyFromString(cliRequest.getFromPubKey());
+            byte [] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
 
-            byte[] byteKey = Base64.getDecoder().decode(cliRequest.getFromPubKey());
-            X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
-            KeyFactory kf = KeyFactory.getInstance("RSA");
-
-            PublicKey fromPublicKey = kf.generatePublic(X509publicKey);
-
-            Cipher c = Cipher.getInstance("RSA", "SunJCE");
-            c.init(Cipher.DECRYPT_MODE, fromPublicKey);
-            byte[] decryptedHash = c.doFinal(Base64.getDecoder().decode(cliRequest.getSignature()));
-            System.out.println(Base64.getEncoder().encodeToString(hashMessage));
-            System.out.println(Base64.getEncoder().encodeToString(decryptedHash));
-
+            if (Arrays.equals(hashMessage, decryptedHash)) {
+                System.out.println("ALL OK");
+            }
+            else {
+                System.out.println("ALL NOT OK");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -213,5 +205,43 @@ public class WalletServerResources implements WalletServer {
         SecureRandom rand = new SecureRandom();
 
         return rand.nextLong();
+    }
+
+    private byte[] generateHash(byte[] toHash) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-512");
+            digest.update(toHash);
+            return digest.digest();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private PublicKey generatePublicKeyFromString(String key){
+
+        try {
+            byte[] byteKey = Base64.getDecoder().decode(key);
+            X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            return kf.generatePublic(X509publicKey);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private byte[] decryptRequest(PublicKey pubk, byte[] data){
+        try {
+            Cipher c = Cipher.getInstance("RSA", "SunJCE");
+            c.init(Cipher.DECRYPT_MODE, pubk);
+            return c.doFinal(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return  null;
     }
 }

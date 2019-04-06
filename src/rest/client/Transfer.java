@@ -15,6 +15,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
+import com.google.gson.Gson;
 import org.glassfish.jersey.client.ClientConfig;
 import rest.server.model.ClientTransferRequest;
 
@@ -56,8 +57,10 @@ public class Transfer {
             byte[] decryptedHash = c.doFinal(hashMessage);
 
             clientRequest.setSignature(Base64.getEncoder().encodeToString(decryptedHash));
-
-            Response response = target.path("/wallet/transfer").request().post(Entity.entity(clientRequest, MediaType.APPLICATION_JSON));
+            Gson gson = new Gson();
+            String json = gson.toJson(clientRequest);
+            Response response = target.path("/wallet/transfer").request()
+                    .post(Entity.entity(json, MediaType.APPLICATION_JSON));
             System.out.println(response.getStatus());
         } catch (Exception e) {
             e.printStackTrace();
