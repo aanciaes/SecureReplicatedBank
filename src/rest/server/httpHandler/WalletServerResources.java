@@ -4,12 +4,7 @@ import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
-import rest.server.model.ClientResponse;
-import rest.server.model.ClientTransferRequest;
-import rest.server.model.CustomExtractor;
-import rest.server.model.ReplicaResponse;
-import rest.server.model.User;
-import rest.server.model.WalletOperationType;
+import rest.server.model.*;
 import rest.server.replica.ReplicaServer;
 
 import javax.crypto.Cipher;
@@ -100,27 +95,36 @@ public class WalletServerResources implements WalletServer {
 
     @Override
     @SuppressWarnings("Duplicates")
-    public void generateMoney(HttpHeaders headers, Long id, Double amount) {
-        System.err.printf("--- generating: %f for user: %s ---\n", amount, id);
+    public void generateMoney(HttpHeaders headers, ClientAddMoneyRequest cliRequest) {
+        System.err.printf("--- generating: %f for user: %s ---\n", cliRequest.getAmount(), cliRequest.getToPubKey());
 
         try {
-            Long nonce = getNonceFromHeader(headers);
-            byte[] reply = invokeOp(true, WalletOperationType.GENERATE_MONEY, id, amount, nonce);
+            byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
+            PublicKey fromPublicKey = generatePublicKeyFromString("ADMIN KEY");
+            byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
 
-            if (reply.length > 0) {
-                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
-                ObjectInput objIn = new ObjectInputStream(byteIn);
+            if (Arrays.equals(hashMessage, decryptedHash)) {
+                Long nonce = getNonceFromHeader(headers);
+                byte[] reply = invokeOp(
+                        true,
+                        WalletOperationType.GENERATE_MONEY,
+                        cliRequest.getToPubKey(),
+                        cliRequest.getAmount(),
+                        cliRequest.getToPubKey(),
+                        nonce
+                );
 
-                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+                if (reply.length > 0) {
+                    ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                    ObjectInput objIn = new ObjectInputStream(byteIn);
 
-                if (rs.getStatusCode() != 200) {
-                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                    ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+                    if (rs.getStatusCode() != 200) {
+                        throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                    }
                 }
             }
-        } catch (IOException |
-                ClassNotFoundException e) {
-            e.printStackTrace();
-            System.out.println("Exception putting value into map: " + e.getMessage());
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();

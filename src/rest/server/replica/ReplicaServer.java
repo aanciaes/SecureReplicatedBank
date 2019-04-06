@@ -4,10 +4,7 @@ import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
 import rest.client.Utils;
-import rest.server.model.ClientTransferRequest;
-import rest.server.model.ReplicaResponse;
-import rest.server.model.User;
-import rest.server.model.WalletOperationType;
+import rest.server.model.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -64,14 +61,10 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
             switch (reqType) {
                 case GENERATE_MONEY:
-                    Long id;
-                    Double amount;
-
-                    id = (Long) objIn.readObject();
-                    amount = (Double) objIn.readObject();
+                    ClientAddMoneyRequest cliAddRequest = (ClientAddMoneyRequest) objIn.readObject();
                     long nonce = (Long) objIn.readObject();
 
-                    appRes = addMoney(id, amount, nonce);
+                    appRes = addMoney(cliAddRequest, nonce);
                     objOut.writeObject(appRes);
 
                     break;
@@ -149,31 +142,20 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         return new ReplicaResponse(200, "Sucess", db, (nonce + 1));
     }
 
-    private ReplicaResponse addMoney(Long id, Double amount, long nonce) {
-/*
-        if (!db.containsKey(id)) {
-            logger.warning("No money generated. User does " + id + " not exist");
-            return new ReplicaResponse(404, "User does" + id + " not exist", null, 0L);
+    private ReplicaResponse addMoney(ClientAddMoneyRequest cliRequest, Long nonce) {
 
-        } else {
-            if (amount != null) {
-                if (amount > 0) {
-                    User user = db.get(id);
-                    user.addMoney(amount);
-
-                    logger.info(amount + " generated to user " + user);
-                    return new ReplicaResponse(200, "Success", null, (nonce + 1));
-                } else {
-                    logger.warning("No money generated. Amount must not be negative");
-                    return new ReplicaResponse(400, "Amount must not be negative", null, 0L);
-                }
-            } else {
-                logger.warning("Amount parameter not present");
-                return new ReplicaResponse(400, "Amount parameter not present", null, 0L);
-            }
+        if (!db.containsKey(cliRequest.getToPubKey())) {
+            db.put(cliRequest.getToPubKey(), 0.0);
         }
-         */
-        return null;
+        if (cliRequest.getAmount() > 0) {
+            db.put(cliRequest.getToPubKey(), db.get(cliRequest.getToPubKey()) + cliRequest.getAmount());
+
+            logger.info(cliRequest.getAmount() + " generated to user " + cliRequest.getToPubKey());
+            return new ReplicaResponse(200, "Success", cliRequest.getAmount(), nonce/2 + 1);
+        } else {
+            logger.warning("No money generated. Amount must not be negative");
+            return new ReplicaResponse(400, "Amount must not be negative", null, 0L);
+        }
     }
 
     private ReplicaResponse transferMoney(ClientTransferRequest cliRequest, Long nonce) {

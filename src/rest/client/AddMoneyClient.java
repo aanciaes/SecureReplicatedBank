@@ -33,7 +33,7 @@ public class AddMoneyClient {
             Gson gson = new Gson();
             String json = gson.toJson(clientRequest);
 
-            Response response = target.path("/wallet/generateMoney").request().header("nonce", Utils.generateNonce())
+            Response response = target.path("/wallet/generate").request().header("nonce", Utils.generateNonce())
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
             System.out.println(response.getStatus());

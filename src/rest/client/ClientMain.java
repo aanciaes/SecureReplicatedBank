@@ -16,7 +16,15 @@ public class ClientMain {
 
         URI baseURI = UriBuilder.fromUri("https://0.0.0.0:8080/").build();
         WebTarget target = client.target(baseURI);
-        
+        int nUsers = 10;
+        while(nUsers > 0){
+            AddMoneyClient.addMoney(target, null, 200.0);
+            nUsers--;
+        }
+
+
+
+
 
 
 
