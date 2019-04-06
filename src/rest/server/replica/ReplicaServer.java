@@ -3,6 +3,7 @@ package rest.server.replica;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
+import rest.client.Utils;
 import rest.server.model.ClientTransferRequest;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.User;
@@ -15,7 +16,9 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.security.KeyPair;
 import java.security.PublicKey;
+import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -31,6 +34,8 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         User u2 = new User(2, 0.0);
         db.put(u1.getPublicKey(), u1);
         db.put(u2.getPublicKey(), u2);*/
+        db.put("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCpH3RUXrTw/VLJAZOJAJKYmwFEdzV7Jt57BkSGfVXn8//3zXr0QASDOYfKjqlx1A/+N2/jl0WGU77AMY7w3tVBWzqMYsHiCsk49om4MNkhNRdaSsokasq/6yGDxZXDq+J0Gsks8Mc+eYKxEAvtoWnnfN5WJ1M6HXeAK1Zn7n4rjQIDAQAB", 99999.9);
+
         new ServiceReplica(id, this, this);
         logger.info("Replica Server #" + id + " started");
     }
@@ -72,18 +77,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     break;
 
                 case TRANSFER_MONEY:
-                    Long idTransfer;
-                    Double amountTransfer;
-                    Long destination;
 
-                    idTransfer = (Long) objIn.readObject();
-                    amountTransfer = (Double) objIn.readObject();
-                    destination = (Long) objIn.readObject();
+                    ClientTransferRequest cliRequest = (ClientTransferRequest) objIn.readObject();
                     long nonceTansfer = (Long) objIn.readObject();
 
-                    ClientTransferRequest cliRequest = new ClientTransferRequest();
-
-                    appRes = transferMoney(cliRequest);
+                    appRes = transferMoney(cliRequest, nonceTansfer);
                     objOut.writeObject(appRes);
 
                     break;
@@ -178,38 +176,30 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         return null;
     }
 
-    private ReplicaResponse transferMoney(ClientTransferRequest cliRequest) {
+    private ReplicaResponse transferMoney(ClientTransferRequest cliRequest, Long nonce) {
 
-        /*
-        if (!db.containsKey(id)) {
-            logger.warning("No money transferred. User does " + id + " not exist");
-            return new ReplicaResponse(404, "User does" + id + " not exist", null, 0L);
+        if (!db.containsKey(cliRequest.getFromPubKey())) {
+            logger.warning("No money transferred. User does not exist");
+            return new ReplicaResponse(404, "User does not exist", null, 0L);
         } else {
-            if (amount != null && destination != null) {
-                if (db.containsKey(destination)) {
-                    User from = db.get(id);
-
-                    if (from.canTransfer(amount)) {
-                        User to = db.get(destination);
-
-                        to.addMoney(amount);
-                        from.substractMoney(amount);
-
-                        logger.info(amount + " transferred from " + from + "to " + destination);
-                        return new ReplicaResponse(200, "Success", null, (nonce + 1));
-                    } else {
-                        logger.warning("No money transferred. No money available in account");
-                        return new ReplicaResponse(400, "No money available in account", null, 0L);
-                    }
-                } else {
-                    logger.warning("No money transferred. User " + destination + " does not exist");
-                    return new ReplicaResponse(404, "No money transferred. User " + destination + " does not exist", null, 0L);
-                }
-            } else {
-                logger.warning("Bad request. Some arameters are missing");
-                return new ReplicaResponse(400, "Bad request. Some arameters are missing", null, 0L);
+            if (!db.containsKey(cliRequest.getToPubKey())) {
+                db.put(cliRequest.getToPubKey(), 0.0);
             }
-        }*/
-        return null;
+
+            Double fromBalance = db.get(cliRequest.getFromPubKey());
+            Double toBalance = db.get(cliRequest.getToPubKey());
+
+            if (fromBalance - cliRequest.getAmount() >= 0) {
+                db.put(cliRequest.getFromPubKey(), fromBalance - cliRequest.getAmount());
+                db.put(cliRequest.getToPubKey(), toBalance + cliRequest.getAmount());
+
+                logger.info("New Balance -> " + cliRequest.getAmount());
+                System.out.println(db);
+                return new ReplicaResponse(200, "Success", fromBalance, nonce / 2 + 1);
+            } else {
+                logger.warning("No money transferred. No money available in account");
+                return new ReplicaResponse(400, "No money available in account", fromBalance, nonce / 2 + 1);
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package rest.server.httpHandler;
 
+import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientTransferRequest;
 import rest.server.model.User;
@@ -21,8 +22,8 @@ public interface WalletServer {
     Double getAmount (@PathParam("id") Long id);
 
     @POST
-    @Path("/{id}/generate")
-    void generateMoney(@Context HttpHeaders headers, @PathParam("id") Long id, @QueryParam("amount") Double amount);
+    @Path("/generate")
+    void generateMoney(@Context HttpHeaders headers, ClientAddMoneyRequest cliRequest);
 
     @POST
     @Path("/transfer")
