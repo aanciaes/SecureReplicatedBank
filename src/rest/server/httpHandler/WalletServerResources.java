@@ -67,7 +67,7 @@ public class WalletServerResources implements WalletServer {
             Long nonce = getNonceFromHeader(headers);
 
             byte[] reply = invokeOp(false, WalletOperationType.GET_ALL, nonce);
-            List<ReplicaResponse> replicaResponseList = convertTomMessages(extractor.getLastRound().getTomMessages());
+            List<ReplicaResponse> replicaResponseList = convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages());
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -137,7 +137,7 @@ public class WalletServerResources implements WalletServer {
                 throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
             }
 
-            List<ReplicaResponse> replicaResponses = convertTomMessages(extractor.getLastRound().getTomMessages());
+            List<ReplicaResponse> replicaResponses = convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages());
             return new ClientResponse(rs.getBody(), replicaResponses);
 
         } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException | InvalidKeySpecException e) {
@@ -179,7 +179,7 @@ public class WalletServerResources implements WalletServer {
                 if (rs.getStatusCode() != 200) {
                     throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
                 } else {
-                    return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getLastRound().getTomMessages()));
+                    return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce+1)).getTomMessages()));
                 }
 
             } else {

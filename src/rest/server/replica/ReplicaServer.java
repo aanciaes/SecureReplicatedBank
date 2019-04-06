@@ -71,9 +71,9 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 case TRANSFER_MONEY:
 
                     ClientTransferRequest cliRequest = (ClientTransferRequest) objIn.readObject();
-                    long nonceTansfer = (Long) objIn.readObject();
+                    long nonceTransfer = (Long) objIn.readObject();
 
-                    appRes = transferMoney(cliRequest, nonceTansfer);
+                    appRes = transferMoney(cliRequest, nonceTransfer);
                     objOut.writeObject(appRes);
 
                     break;

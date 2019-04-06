@@ -3,41 +3,47 @@ package rest.server.model;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.Extractor;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.util.HashMap;
+import java.util.Map;
+
 public class CustomExtractor implements Extractor {
 
-    private ExtractorMessage lastRound;
+    private Map<Long, ExtractorMessage> rounds;
 
     public CustomExtractor() {
+        this.rounds = new HashMap();
     }
 
     @Override
     public TOMMessage extractResponse(TOMMessage[] tomMessages, int sameContent, int lastReceived) {
-        lastRound = new ExtractorMessage(tomMessages, sameContent, lastReceived);
+        TOMMessage lastMessage = tomMessages[lastReceived];
+        Long nonce = extractNonceFromTomMessage(lastMessage);
 
-        /*try {
-            KeyLoader keyLoader = new RSAKeyLoader(0, "config", false, "SHA256withRSA");
-            PublicKey pk = keyLoader.loadPublicKey(tomMessages[0].getSender());
-            Signature sig = Signature.getInstance("SHA512withRSA", "SunRsaSign");
-            sig.initVerify(pk);
+        rounds.put(nonce, new ExtractorMessage(tomMessages, sameContent, lastReceived));
 
-            sig.update(tomMessages[0].serializedMessage);
-            System.out.println(sig.verify(tomMessages[0].serializedMessageSignature));
-
-            PublicKey pk1 = keyLoader.loadPublicKey(tomMessages[1].getSender());
-            Signature sig1 = Signature.getInstance("SHA512withRSA", "SunRsaSign");
-            sig1.initVerify(pk1);
-
-            sig1.update(tomMessages[1].serializedMessage);
-            System.out.println(sig1.verify(tomMessages[1].serializedMessageSignature));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-
-        return tomMessages[lastReceived];
+        return lastMessage;
     }
 
-    public ExtractorMessage getLastRound() {
-        return lastRound;
+    public ExtractorMessage getRound(Long id) {
+        //Removes entry when the server access it. An entry is only supposed to be used once.
+        // This way, it prevents this list to grow to infinity
+        return rounds.remove(id);
+    }
+
+    private long extractNonceFromTomMessage(TOMMessage message) {
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(message.getContent());
+             ObjectInput objIn = new ObjectInputStream(byteIn)) {
+
+            ReplicaResponse replicaResponse = (ReplicaResponse) objIn.readObject();
+            return replicaResponse.getNonce();
+
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return 0L;
+        }
     }
 }
