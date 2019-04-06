@@ -5,6 +5,8 @@ import rest.server.model.ClientTransferRequest;
 import rest.server.model.User;
 
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
 @Path("/wallet")
@@ -12,7 +14,7 @@ public interface WalletServer {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse listUsers();
+    ClientResponse listUsers(@Context HttpHeaders headers);
 
     @GET
     @Path("/{id}")
@@ -20,10 +22,10 @@ public interface WalletServer {
 
     @POST
     @Path("/{id}/generate")
-    void generateMoney(@PathParam("id") Long id, @QueryParam("amount") Double amount);
+    void generateMoney(@Context HttpHeaders headers, @PathParam("id") Long id, @QueryParam("amount") Double amount);
 
     @POST
     @Path("/transfer")
     @Consumes (MediaType.APPLICATION_JSON)
-    void transferMoney(ClientTransferRequest cliRequest);
+    void transferMoney(@Context HttpHeaders headers, ClientTransferRequest cliRequest);
 }

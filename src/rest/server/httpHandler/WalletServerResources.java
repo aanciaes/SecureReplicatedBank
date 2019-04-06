@@ -14,6 +14,9 @@ import rest.server.replica.ReplicaServer;
 
 import javax.crypto.Cipher;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,9 +60,11 @@ public class WalletServerResources implements WalletServer {
     }
 
     @Override
-    public ClientResponse listUsers() {
+    public ClientResponse listUsers(HttpHeaders headers) {
         try {
-            byte[] reply = invokeOp(false, WalletOperationType.GET_ALL, generateNonce());
+            Long nonce = getNonceFromHeader(headers);
+
+            byte[] reply = invokeOp(false, WalletOperationType.GET_ALL, nonce);
             List<ReplicaResponse> replicaResponseList = convertTomMessages(extractor.getLastRound().getTomMessages());
 
             if (reply.length > 0) {
@@ -95,11 +100,12 @@ public class WalletServerResources implements WalletServer {
 
     @Override
     @SuppressWarnings("Duplicates")
-    public void generateMoney(Long id, Double amount) {
+    public void generateMoney(HttpHeaders headers, Long id, Double amount) {
         System.err.printf("--- generating: %f for user: %s ---\n", amount, id);
 
         try {
-            byte[] reply = invokeOp(true, WalletOperationType.GENERATE_MONEY, id, amount, generateNonce());
+            Long nonce = getNonceFromHeader(headers);
+            byte[] reply = invokeOp(true, WalletOperationType.GENERATE_MONEY, id, amount, nonce);
 
             if (reply.length > 0) {
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -123,7 +129,7 @@ public class WalletServerResources implements WalletServer {
 
     @Override
     @SuppressWarnings("Duplicates")
-    public void transferMoney(ClientTransferRequest cliRequest) {
+    public void transferMoney(HttpHeaders headers, ClientTransferRequest cliRequest) {
         System.err.printf("--- transfering: %f from user: %s to user: %s\n", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey());
 
         try {
@@ -132,13 +138,15 @@ public class WalletServerResources implements WalletServer {
             byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
 
             if (Arrays.equals(hashMessage, decryptedHash)) {
+
+                Long nonce = getNonceFromHeader(headers);
                 byte[] reply = invokeOp(
                         true,
                         WalletOperationType.TRANSFER_MONEY,
                         cliRequest.getFromPubKey(),
                         cliRequest.getAmount(),
                         cliRequest.getToPubKey(),
-                        generateNonce()
+                        nonce
                 );
 
                 if (reply.length > 0) {
@@ -210,13 +218,6 @@ public class WalletServerResources implements WalletServer {
         return replicaResponseList;
     }
 
-    private long generateNonce() {
-        // create instance of SecureRandom class
-        SecureRandom rand = new SecureRandom();
-
-        return rand.nextLong();
-    }
-
     private byte[] generateHash(byte[] toHash) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
@@ -253,5 +254,10 @@ public class WalletServerResources implements WalletServer {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private long getNonceFromHeader(HttpHeaders headers) {
+        MultivaluedMap<String, String> headerParams = headers.getRequestHeaders();
+        return new Long(headerParams.get("nonce").get(0));
     }
 }
