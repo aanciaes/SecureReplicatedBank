@@ -3,14 +3,12 @@ package rest.client;
 import com.google.gson.Gson;
 import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
-import rest.server.model.ClientTransferRequest;
 import rest.server.model.ReplicaResponse;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Base64;
@@ -40,9 +38,9 @@ public class AddMoneyClient {
             Response response = target.path("/generate").request().header("nonce", Utils.generateNonce())
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
+            //--- debug prints
 
-
-            int status = response.getStatus();
+            /*int status = response.getStatus();
             System.out.println("Response Status: " + status);
 
             if (status == 200) {
@@ -58,7 +56,7 @@ public class AddMoneyClient {
                 }
             } else {
                 System.out.println(response.getStatusInfo().getReasonPhrase());
-            }
+            }*/
         } catch (Exception e) {
             e.printStackTrace();
         }

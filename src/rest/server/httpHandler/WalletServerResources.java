@@ -149,13 +149,17 @@ public class WalletServerResources implements WalletServer {
 
     @Override
     @SuppressWarnings("Duplicates")
-    public void transferMoney(HttpHeaders headers, ClientTransferRequest cliRequest) {
+    public ClientResponse transferMoney(HttpHeaders headers, ClientTransferRequest cliRequest) {
         System.err.printf("--- transfering: %f from user: %s to user: %s\n", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey());
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
             PublicKey fromPublicKey = generatePublicKeyFromString(cliRequest.getFromPubKey());
             byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
+
+            if (decryptedHash == null) {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
 
             if (Arrays.equals(hashMessage, decryptedHash)) {
 
@@ -167,23 +171,24 @@ public class WalletServerResources implements WalletServer {
                         nonce
                 );
 
-                if (reply.length > 0) {
-                    ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
-                    ObjectInput objIn = new ObjectInputStream(byteIn);
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
 
-                    ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
 
-                    if (rs.getStatusCode() != 200) {
-                        throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
-                    } else {
-                        //
-                    }
+                if (rs.getStatusCode() != 200) {
+                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                } else {
+                    return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getLastRound().getTomMessages()));
                 }
+
             } else {
-                throw new WebApplicationException("Forbidden", Response.Status.FORBIDDEN);
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
-        } catch (Exception e) {
+        } catch (IOException | ClassNotFoundException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
             e.printStackTrace();
+            throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 

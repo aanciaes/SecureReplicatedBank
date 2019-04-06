@@ -23,17 +23,18 @@ public class ClientMain {
         URI baseURI = UriBuilder.fromUri("https://0.0.0.0:8080/wallet/").build();
         WebTarget target = client.target(baseURI);
         int nUsers = 0;
-        while(nUsers < 1){
+        while (nUsers < 2) {
             try {
                 KeyPair kp = Utils.generateNewKeyPair(1024);
                 users.add(kp);
-                AddMoneyClient.addMoney(target, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), -1000.0);
+                AddMoneyClient.addMoney(target, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), 1000.0);
                 nUsers++;
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        //TransferClient.transfer(target,users.get(0),Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 200.0);
+        TransferClient.transfer(target, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
+        TransferClient.transfer(target, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
     }
 }

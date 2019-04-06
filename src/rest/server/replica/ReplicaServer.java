@@ -3,8 +3,10 @@ package rest.server.replica;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
-import rest.client.Utils;
-import rest.server.model.*;
+import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientTransferRequest;
+import rest.server.model.ReplicaResponse;
+import rest.server.model.WalletOperationType;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,9 +15,6 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.security.KeyPair;
-import java.security.PublicKey;
-import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -165,23 +164,27 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             logger.warning("No money transferred. User does not exist");
             return new ReplicaResponse(404, "User does not exist", null, 0L);
         } else {
-            if (!db.containsKey(cliRequest.getToPubKey())) {
-                db.put(cliRequest.getToPubKey(), 0.0);
-            }
+            if (cliRequest.getAmount() > 0) {
+                if (!db.containsKey(cliRequest.getToPubKey())) {
+                    db.put(cliRequest.getToPubKey(), 0.0);
+                }
 
-            Double fromBalance = db.get(cliRequest.getFromPubKey());
-            Double toBalance = db.get(cliRequest.getToPubKey());
+                Double fromBalance = db.get(cliRequest.getFromPubKey());
+                Double toBalance = db.get(cliRequest.getToPubKey());
 
-            if (fromBalance - cliRequest.getAmount() >= 0) {
-                db.put(cliRequest.getFromPubKey(), fromBalance - cliRequest.getAmount());
-                db.put(cliRequest.getToPubKey(), toBalance + cliRequest.getAmount());
+                if (fromBalance - cliRequest.getAmount() >= 0) {
+                    db.put(cliRequest.getFromPubKey(), fromBalance - cliRequest.getAmount());
+                    db.put(cliRequest.getToPubKey(), toBalance + cliRequest.getAmount());
 
-                //logger.info("New Balance -> " + cliRequest.getAmount());
-                System.out.println(db);
-                return new ReplicaResponse(200, "Success", fromBalance, nonce / 2 + 1);
+                    logger.info("Balance after transfer " + cliRequest.getAmount());
+                    return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1);
+                } else {
+                    logger.warning("No money transferred. No money available in account");
+                    return new ReplicaResponse(400, "No money available in account", null, 0L);
+                }
             } else {
-                logger.warning("No money transferred. No money available in account");
-                return new ReplicaResponse(400, "No money available in account", fromBalance, nonce / 2 + 1);
+                logger.warning("No money transferred. Amount must not be negative");
+                return new ReplicaResponse(400, "Amount must not be negative", null, 0L);
             }
         }
     }
