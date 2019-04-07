@@ -110,9 +110,17 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
             switch (reqType) {
                 case GET_ALL:
+                    long nonceAll = (Long) objIn.readObject();
+
+                    appRes = listUsers(nonceAll);
+                    objOut.writeObject(appRes);
+
+                    break;
+                case GET_BALANCE:
+                    String userPublicKey = (String) objIn.readObject();
                     long nonce = (Long) objIn.readObject();
 
-                    appRes = listUsers(nonce);
+                    appRes = getBalance(userPublicKey, nonce);
                     objOut.writeObject(appRes);
 
                     break;
@@ -139,6 +147,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
     private ReplicaResponse listUsers(long nonce) {
         return new ReplicaResponse(200, "Sucess", db, (nonce + 1));
+    }
+
+    private ReplicaResponse getBalance(String userPublicKey, Long nonce) {
+        if (db.containsKey(userPublicKey)) {
+            return new ReplicaResponse(200, "Success", db.get(userPublicKey), (nonce + 1));
+        } else {
+            return new ReplicaResponse(404, "User does not exist", null, 0L);
+        }
     }
 
     private ReplicaResponse addMoney(ClientAddMoneyRequest cliRequest, Long nonce) {

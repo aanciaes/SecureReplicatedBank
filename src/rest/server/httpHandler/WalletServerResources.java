@@ -26,6 +26,8 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -96,8 +98,48 @@ public class WalletServerResources implements WalletServer {
     }
 
     @Override
-    public Double getAmount(Long id) {
-        return null;
+    @SuppressWarnings("Duplicates")
+    public ClientResponse getAmount(HttpHeaders headers, String userIdentifier, String signature) {
+        System.err.printf("--- getting balance for user:for user: %s ---\n", userIdentifier);
+
+        try {
+            long nonce = getNonceFromHeader(headers);
+            byte[] localHash = generateHash((userIdentifier + nonce).getBytes());
+            byte[] signedHash = decryptRequest(generatePublicKeyFromString(userIdentifier), Base64.getDecoder().decode(signature));
+
+            if (signedHash == null) {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+
+            if (Arrays.equals(localHash, signedHash)) {
+                System.out.println("yeah");
+
+                byte[] reply = invokeOp(
+                        false,
+                        WalletOperationType.GET_BALANCE,
+                        userIdentifier,
+                        nonce
+                );
+                // Reply from the replicas
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
+
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+                if (rs.getStatusCode() != 200) {
+                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                }
+
+                List<ReplicaResponse> replicaResponses = convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages());
+                return new ClientResponse(rs.getBody(), replicaResponses);
+            } else {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @Override
@@ -179,7 +221,7 @@ public class WalletServerResources implements WalletServer {
                 if (rs.getStatusCode() != 200) {
                     throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
                 } else {
-                    return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce+1)).getTomMessages()));
+                    return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages()));
                 }
 
             } else {
@@ -263,9 +305,8 @@ public class WalletServerResources implements WalletServer {
 
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
-
-        return null;
     }
 
     private byte[] decryptRequest(PublicKey pubk, byte[] data) {
@@ -275,8 +316,8 @@ public class WalletServerResources implements WalletServer {
             return c.doFinal(data);
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
-        return null;
     }
 
     private long getNonceFromHeader(HttpHeaders headers) {

@@ -33,9 +33,12 @@ public class ClientMain {
                 e.printStackTrace();
             }
         }
+        GetBalanceClient.getBalance(target, users.get(0));
 
         TransferClient.transfer(target, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
         TransferClient.transfer(target, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
+
+        GetBalanceClient.getBalance(target, users.get(0));
     }
 }
 

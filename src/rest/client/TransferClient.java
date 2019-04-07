@@ -40,7 +40,7 @@ public class TransferClient {
 
             //--- debug prints
 
-            int status = response.getStatus();
+            /*int status = response.getStatus();
             System.out.println("Response Status: " + status);
 
             if (status == 200) {
@@ -56,7 +56,7 @@ public class TransferClient {
                 }
             } else {
                 System.out.println(response.getStatusInfo().getReasonPhrase());
-            }
+            }*/
         } catch (Exception e) {
             e.printStackTrace();
         }

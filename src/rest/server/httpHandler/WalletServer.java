@@ -9,6 +9,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import java.io.UnsupportedEncodingException;
 
 @Path("/wallet")
 public interface WalletServer {
@@ -18,8 +19,9 @@ public interface WalletServer {
     ClientResponse listUsers(@Context HttpHeaders headers);
 
     @GET
-    @Path("/{id}")
-    Double getAmount (@PathParam("id") Long id);
+    @Path("/{userIdentifier}")
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientResponse getAmount (@Context HttpHeaders headers, @PathParam("userIdentifier") String userIdentifier, @QueryParam("signature") String signature);
 
     @POST
     @Path("/generate")
