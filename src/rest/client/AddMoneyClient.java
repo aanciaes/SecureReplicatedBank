@@ -44,7 +44,7 @@ public class AddMoneyClient {
             //--- debug prints
 
             int status = response.getStatus();
-            System.out.println("Response Status: " + status);
+            System.out.println("Add Money Status: " + status);
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
