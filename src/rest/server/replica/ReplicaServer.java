@@ -26,12 +26,6 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     private Logger logger = Logger.getLogger(ReplicaServer.class.getName());
 
     public ReplicaServer(int id) {
-        /*User u1 = new User(1, 0.0);
-        User u2 = new User(2, 0.0);
-        db.put(u1.getPublicKey(), u1);
-        db.put(u2.getPublicKey(), u2);*/
-        //db.put("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCpH3RUXrTw/VLJAZOJAJKYmwFEdzV7Jt57BkSGfVXn8//3zXr0QASDOYfKjqlx1A/+N2/jl0WGU77AMY7w3tVBWzqMYsHiCsk49om4MNkhNRdaSsokasq/6yGDxZXDq+J0Gsks8Mc+eYKxEAvtoWnnfN5WJ1M6HXeAK1Zn7n4rjQIDAQAB", 99999.9);
-
         new ServiceReplica(id, this, this);
         logger.info("Replica Server #" + id + " started");
     }
