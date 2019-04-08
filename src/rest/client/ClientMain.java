@@ -14,9 +14,12 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.security.KeyPair;
+import java.security.Timestamp;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Main client. Runs all tests by calling the other clients
@@ -41,12 +44,18 @@ public class ClientMain {
             faults = Integer.parseInt(cmd.getOptionValue("f"));
         }
 
-
         if (cmd.hasOption("d")) {
             Configurator.setLevel(AddMoneyClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(GetBalanceClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(TransferClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(Utils.class.getName(), Level.DEBUG);
+        }
+
+        if (cmd.hasOption('t')){
+            Configurator.setLevel(AddMoneyClient.class.getName(), Level.OFF);
+            Configurator.setLevel(GetBalanceClient.class.getName(), Level.OFF);
+            Configurator.setLevel(TransferClient.class.getName(), Level.OFF);
+            Configurator.setLevel(Utils.class.getName(), Level.OFF);
         }
 
         Client client = ClientBuilder.newBuilder()
@@ -68,16 +77,57 @@ public class ClientMain {
             }
         }
 
+        GetBalanceTest test = new GetBalanceTest(target, faults);
+        GetBalanceTest test2 = new GetBalanceTest(target, faults);
+        GetBalanceTest test3 = new GetBalanceTest(target, faults);
+        Thread thread1 = new Thread(test);
+        Thread thread2 = new Thread(test2);
+        Thread thread3 = new Thread(test3);
 
-        Thread thread1 = new Thread(new GetBalanceTest(target, faults));
         thread1.start();
-
-        Thread thread2 = new Thread(new GetBalanceTest(target, faults));
         thread2.start();
-
-        Thread thread3 = new Thread(new GetBalanceTest(target, faults));
         thread3.start();
 
+        List<Long> aggregatedBalance = new ArrayList<Long>();
+        List<Long> aggregatedTransfer = new ArrayList<Long>();
+
+        thread1.join();
+
+        aggregatedBalance.addAll(test.getBalanceTimes());
+        aggregatedBalance.remove(0);
+        aggregatedTransfer.addAll(test.getTransferTimes());
+        aggregatedTransfer.remove(0);
+
+        System.out.println("Thread 1 Balance times -> " + test.getBalanceTimes());
+        System.out.println("Thread 1 Transfer times -> " + test.getTransferTimes());
+        thread2.join();
+        test2.getBalanceTimes().remove(0);
+        aggregatedBalance.addAll(test2.getBalanceTimes());
+        test2.getTransferTimes().remove(0);
+        aggregatedTransfer.addAll(test2.getTransferTimes());
+
+        System.out.println("Thread 2 Balance times -> " + test2.getBalanceTimes());
+        System.out.println("Thread 2 Transfer times -> " + test2.getTransferTimes());
+        thread3.join();
+        test3.getBalanceTimes().remove(0);
+        aggregatedBalance.addAll(test3.getBalanceTimes());
+        test3.getTransferTimes().remove(0);
+        aggregatedTransfer.addAll(test3.getTransferTimes());
+        System.out.println("Thread 3 Balance times -> " + test3.getBalanceTimes());
+        System.out.println("Thread 3 Transfer times -> " + test3.getTransferTimes());
+
+        Long accumulatedBalance = 0L;
+        for(Long time : aggregatedBalance){
+            accumulatedBalance += time;
+        }
+
+        Long accumulatedTranfer = 0L;
+        for(Long time : aggregatedTransfer){
+            accumulatedTranfer += time;
+        }
+
+        System.out.println("Get Balance Average - > " + accumulatedBalance/aggregatedBalance.size() + "ms");
+        System.out.println("Get Transfer Average - > " + accumulatedBalance/aggregatedTransfer.size() + "ms");
         /*
         GetBalanceClient.getBalance(target, faults, users.get(0));
 
@@ -92,7 +142,8 @@ public class ClientMain {
         // create Options object
         Options options = new Options();
         options.addOption("d", "debug", false, "debug mode");
-        options.addOption("f", "faults", false, "number of faults to tolerate mode");
+        options.addOption("t", "tests", false, "test mode, no client logs");
+        options.addOption("f", "faults", true, "number of faults to tolerate mode");
 
         CommandLineParser parser = new DefaultParser();
 
@@ -100,17 +151,65 @@ public class ClientMain {
     }
 
     static class GetBalanceTest implements Runnable{
-        final int faults;
-        final WebTarget target;
+        int faults;
+        WebTarget target;
+        List<Long> getBalanceTimes = new ArrayList<Long>();
+        List<Long> getTransferTimes = new ArrayList<Long>();
+
 
         public GetBalanceTest(WebTarget target, int faults){
             this.faults = faults;
             this.target = target;
         }
+
+        public List<Long> getBalanceTimes() {
+            return getBalanceTimes;
+        }
+
+        public List<Long> getTransferTimes() {
+            return getTransferTimes;
+        }
+
         @Override
         public void run() {
-            GetBalanceClient.getBalance(target, faults, users.get(0));
-            GetBalanceClient.getBalance(target, faults, users.get(0));
+            Long testTime = System.currentTimeMillis();
+            Random rand = new Random();
+            while(System.currentTimeMillis() - testTime < 1800){
+                int sender = rand.nextInt((users.size()-1) + 1);
+                Long timestampInit = System.currentTimeMillis();
+                GetBalanceClient.getBalance(target, faults, users.get(sender));
+                getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
+
+                sender = rand.nextInt((users.size()-1) + 1);
+                timestampInit = System.currentTimeMillis();
+                GetBalanceClient.getBalance(target, faults, users.get(sender));
+                getTransferTimes.add(System.currentTimeMillis() - timestampInit);
+
+                double amount = 1000 * rand.nextDouble();
+                sender = rand.nextInt((users.size()-1) + 1);
+                int receiver = rand.nextInt((users.size()-1) + 1);
+                timestampInit = System.currentTimeMillis();
+                TransferClient.transfer(target, faults, users.get(sender), Base64.getEncoder().encodeToString(users.get(receiver).getPublic().getEncoded()), amount);
+                getTransferTimes.add(System.currentTimeMillis() - timestampInit);
+
+                amount = 1000 * rand.nextDouble();
+                sender = rand.nextInt((users.size()-1) + 1);
+                receiver = rand.nextInt((users.size()-1) + 1);
+                timestampInit = System.currentTimeMillis();
+                TransferClient.transfer(target, faults, users.get(sender), Base64.getEncoder().encodeToString(users.get(receiver).getPublic().getEncoded()), amount);
+                getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
+
+                timestampInit = System.currentTimeMillis();
+                GetBalanceClient.getBalance(target, faults, users.get(0));
+                getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
+
+                amount = 1000 * rand.nextDouble();
+                sender = rand.nextInt((users.size()-1) + 1);
+                receiver = rand.nextInt((users.size()-1) + 1);
+                timestampInit = System.currentTimeMillis();
+                TransferClient.transfer(target, faults, users.get(sender), Base64.getEncoder().encodeToString(users.get(receiver).getPublic().getEncoded()), amount);
+                getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
+            }
         }
     }
 }

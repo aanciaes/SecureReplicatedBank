@@ -50,6 +50,12 @@ public class WalletJdkHttpServer {
             Configurator.setLevel(ReplicaServer.class.getName(), Level.DEBUG);
         }
 
+        //Set debug level
+        if (cmd.hasOption('t')) {
+            Configurator.setLevel(WalletServerResources.class.getName(), Level.OFF);
+            Configurator.setLevel(ReplicaServer.class.getName(), Level.OFF);
+        }
+
         //Set server unpredictable mode
         if (cmd.hasOption('u')) {
             unpredictable = true;
@@ -71,6 +77,7 @@ public class WalletJdkHttpServer {
         options.addOption("p", "port", true, "port");
         options.addOption("id", "replicaId", true, "replica id");
         options.addOption("d", "debug", false, "debug mode");
+        options.addOption("t", "tests", false, "test mode, no prints");
         options.addOption("u", "unpredictable", false, "unpredictable mode");
 
         CommandLineParser parser = new DefaultParser();
