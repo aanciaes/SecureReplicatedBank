@@ -26,6 +26,7 @@ public class AddMoneyClient {
      * Client that adds money to a user.
      *
      * @param target               WebTarget to the server
+     * @param faults               Number of fault that the client wants to tolerate
      * @param adminPrivateKey      Admin Private Key to sign the request
      * @param destinationPublicKey Destination user public key
      * @param amount               amount to add to the user

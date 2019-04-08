@@ -25,6 +25,7 @@ public class TransferClient {
      * Client that transfers the money from one user to another
      *
      * @param target WebTarget to the server
+     * @param faults Number of fault that the client wants to tolerate
      * @param kp     Public and private key of the user that wants to transfer money
      * @param toKey  Public key of the destniation user
      * @param amount Amount to transfer

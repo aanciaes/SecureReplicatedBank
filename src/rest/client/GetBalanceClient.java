@@ -21,6 +21,7 @@ public class GetBalanceClient {
     /**
      * Client that returns the balance of a user
      *
+     * @param faults      Number of fault that the client wants to tolerate
      * @param target      WebTarget to the server
      * @param userKeyPair User public and private key
      */
