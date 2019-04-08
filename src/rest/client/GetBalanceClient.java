@@ -1,5 +1,7 @@
 package rest.client;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 
 import javax.ws.rs.client.WebTarget;
@@ -8,11 +10,13 @@ import java.net.URLEncoder;
 import java.security.KeyPair;
 import java.util.Base64;
 
+
 public class GetBalanceClient {
+
+    private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
 
     @SuppressWarnings("Duplicates")
     public static void getBalance(WebTarget target, KeyPair userKeyPair) {
-
         try {
             String userKeyString = Base64.getEncoder().encodeToString(userKeyPair.getPublic().getEncoded());
 
@@ -30,22 +34,20 @@ public class GetBalanceClient {
                     .get();
 
             int status = response.getStatus();
-            System.out.println("Get Balance Status: " + status);
+            logger.info("Get Balance Status: " + status);
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
-                System.out.println("Current Balance: " + clientResponse.getBody());
+                logger.info("Current Balance: " + clientResponse.getBody());
 
-
-                int maxConflicts = (Integer) (clientResponse.getResponses().size() / 2);
-
+                int maxConflicts = clientResponse.getResponses().size() / 2;
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse);
 
                 if (conflicts >= maxConflicts) {
-                    System.out.println("CONFLICT FOUND!");
+                    logger.warn("Conflicts found, operation is not accepted by the client");
                 }
             } else {
-                System.out.println(response.getStatusInfo().getReasonPhrase());
+                logger.info(response.getStatusInfo().getReasonPhrase());
             }
         } catch (Exception e) {
             e.printStackTrace();

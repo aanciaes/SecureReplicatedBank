@@ -1,5 +1,8 @@
 package rest.client;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -10,11 +13,21 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+
 public class ClientMain {
 
     private static List<KeyPair> users = new ArrayList();
 
     public static void main(String[] args) {
+        Configurator.setRootLevel(Level.INFO);
+
+        if (args.length == 1) {
+            boolean debug = Boolean.parseBoolean(args[0]);
+
+            if (debug) {
+                Configurator.setRootLevel(Level.DEBUG);
+            }
+        }
 
         Client client = ClientBuilder.newBuilder()
                 .hostnameVerifier(new Utils.InsecureHostnameVerifier())
@@ -41,24 +54,3 @@ public class ClientMain {
         GetBalanceClient.getBalance(target, users.get(0));
     }
 }
-
-
-/*try {
-            KeyLoader keyLoader = new RSAKeyLoader(0, "config", false, "SHA256withRSA");
-            PublicKey pk = keyLoader.loadPublicKey(tomMessages[0].getSender());
-            Signature sig = Signature.getInstance("SHA512withRSA", "SunRsaSign");
-            sig.initVerify(pk);
-
-            sig.update(tomMessages[0].serializedMessage);
-            System.out.println(sig.verify(tomMessages[0].serializedMessageSignature));
-
-            PublicKey pk1 = keyLoader.loadPublicKey(tomMessages[1].getSender());
-            Signature sig1 = Signature.getInstance("SHA512withRSA", "SunRsaSign");
-            sig1.initVerify(pk1);
-
-            sig1.update(tomMessages[1].serializedMessage);
-            System.out.println(sig1.verify(tomMessages[1].serializedMessageSignature));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/

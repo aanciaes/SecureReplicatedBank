@@ -1,6 +1,8 @@
 package rest.client;
 
 import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
 
@@ -13,6 +15,9 @@ import java.security.PublicKey;
 import java.util.Base64;
 
 public class AddMoneyClient {
+
+    private static Logger logger = LogManager.getLogger(AddMoneyClient.class.getName());
+
     @SuppressWarnings("Duplicates")
     public static void addMoney(WebTarget target, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, Double amount) {
 
@@ -40,21 +45,21 @@ public class AddMoneyClient {
             //--- debug prints
 
             int status = response.getStatus();
-            System.out.println("Add Money Status: " + status);
+            logger.info("Add Money Status: " + status);
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
-                System.out.println("Amount Added: " + clientResponse.getBody());
+                logger.debug("Amount Added: " + clientResponse.getBody());
 
-                int maxConflicts = (Integer) (clientResponse.getResponses().size() / 2);
+                int maxConflicts = clientResponse.getResponses().size() / 2;
 
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse);
 
                 if (conflicts >= maxConflicts) {
-                    System.out.println("CONFLICT FOUND!");
+                    logger.warn("Conflicts found, operation is not accepted by the client");
                 }
             } else {
-                System.out.println(response.getStatusInfo().getReasonPhrase());
+                logger.info(response.getStatusInfo().getReasonPhrase());
             }
         } catch (Exception e) {
             e.printStackTrace();

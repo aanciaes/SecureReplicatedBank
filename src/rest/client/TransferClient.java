@@ -1,6 +1,8 @@
 package rest.client;
 
 import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientTransferRequest;
 
@@ -12,6 +14,8 @@ import java.security.KeyPair;
 import java.util.Base64;
 
 public class TransferClient {
+
+    private static Logger logger = LogManager.getLogger(TransferClient.class.getName());
 
     public static void transfer(WebTarget target, KeyPair kp, String toKey, Double amount) {
 
@@ -40,20 +44,20 @@ public class TransferClient {
             //--- debug prints
 
             int status = response.getStatus();
-            System.out.println("Transfer Money Status: " + status);
+            logger.info("Transfer Money Status: " + status);
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
-                System.out.println("Balance after transfer: " + clientResponse.getBody());
+                logger.debug("Balance after transfer: " + clientResponse.getBody());
 
                 int maxConflicts = (Integer) (clientResponse.getResponses().size() / 2);
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse);
 
                 if (conflicts >= maxConflicts) {
-                    System.out.println("CONFLICT FOUND!");
+                    logger.warn("Conflicts found, operation is not accepted by the client");
                 }
             } else {
-                System.out.println(response.getStatusInfo().getReasonPhrase());
+                logger.info(response.getStatusInfo().getReasonPhrase());
             }
         } catch (Exception e) {
             e.printStackTrace();
