@@ -11,6 +11,7 @@ public class ReplicaResponse implements Serializable {
 
     // Client check
     private int replicaId;
+    private WalletOperationType operationType;
     private byte[] serializedMessage;
     private byte[] signature;
     private long nonce;
@@ -18,11 +19,12 @@ public class ReplicaResponse implements Serializable {
     public ReplicaResponse() {
     }
 
-    public ReplicaResponse(int statusCode, String message, Object body, long nonce) {
+    public ReplicaResponse(int statusCode, String message, Object body, long nonce, WalletOperationType operationType) {
         this.statusCode = statusCode;
         this.message = message;
         this.body = body;
         this.nonce = nonce;
+        this.operationType = operationType;
     }
 
     public int getStatusCode() {
@@ -71,6 +73,14 @@ public class ReplicaResponse implements Serializable {
 
     public void setReplicaId(int replicaId) {
         this.replicaId = replicaId;
+    }
+
+    public WalletOperationType getOperationType() {
+        return operationType;
+    }
+
+    public void setOperationType(WalletOperationType operationType) {
+        this.operationType = operationType;
     }
 
     public long getNonce() {

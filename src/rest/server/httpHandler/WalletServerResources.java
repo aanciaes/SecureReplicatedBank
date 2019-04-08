@@ -110,8 +110,6 @@ public class WalletServerResources implements WalletServer {
             }
 
             if (Arrays.equals(localHash, signedHash)) {
-                System.out.println("yeah");
-
                 byte[] reply = invokeOp(
                         false,
                         WalletOperationType.GET_BALANCE,

@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 import rest.server.model.ReplicaResponse;
+import rest.server.model.WalletOperationType;
 
 import javax.crypto.Cipher;
 import javax.net.ssl.HostnameVerifier;
@@ -22,7 +23,6 @@ import java.util.Base64;
 public class Utils {
 
     private static Logger logger = LogManager.getLogger(Utils.class.getName());
-
 
     public static long generateNonce() {
         // create instance of SecureRandom class
@@ -64,27 +64,30 @@ public class Utils {
         }
     }
 
-    public static int verifyReplicaResponse(long nonce, ClientResponse clientResponse) {
+    public static int verifyReplicaResponse(long nonce, ClientResponse clientResponse, WalletOperationType operationType) {
         int conflicts = 0;
 
         for (ReplicaResponse replicaResponse : clientResponse.getResponses()) {
-            logger.debug (String.format("ReplicaId: %d, Status: %d, body: %s", replicaResponse.getReplicaId(), replicaResponse.getStatusCode(), replicaResponse.getBody().toString()));
+            logger.debug(String.format("ReplicaId: %d, Status: %d, Operation Type: %s, body: %s", replicaResponse.getReplicaId(), replicaResponse.getStatusCode(), replicaResponse.getOperationType().toString(), replicaResponse.getBody().toString()));
             if (nonce + 1 != replicaResponse.getNonce()) {
                 conflicts++;
-                logger.warn("NONCE CONFLICT");
+                logger.warn("Nonce Conflict");
+            } else if (operationType != replicaResponse.getOperationType()) {
+                conflicts++;
+                logger.warn("Operation Type conflict");
             } else if (!clientResponse.getBody().equals(replicaResponse.getBody())) {
                 conflicts++;
-                logger.warn("AMOUNT CONFLICT");
+                logger.warn("Amount Conflict");
             } else if (replicaResponse.getStatusCode() != 200) {
                 conflicts++;
-                logger.warn("STATUS CONFLICT");
+                logger.warn("Status Conflict");
             } else {
                 if (!Utils.verifyReplicaResponseSignature(
                         replicaResponse.getReplicaId(),
                         Base64.getDecoder().decode(replicaResponse.getSerializedMessage()),
                         Base64.getDecoder().decode(replicaResponse.getSignature()))
                 ) {
-                    logger.warn("SIGNATURE CONFLICT");
+                    logger.warn("Signature Conflict");
                     conflicts++;
                 }
             }

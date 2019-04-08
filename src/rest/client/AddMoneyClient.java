@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
+import rest.server.model.WalletOperationType;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -53,10 +54,10 @@ public class AddMoneyClient {
 
                 int maxConflicts = clientResponse.getResponses().size() / 2;
 
-                int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse);
+                int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.GENERATE_MONEY);
 
                 if (conflicts >= maxConflicts) {
-                    logger.warn("Conflicts found, operation is not accepted by the client");
+                    logger.error("Conflicts found, operation is not accepted by the client");
                 }
             } else {
                 logger.info(response.getStatusInfo().getReasonPhrase());

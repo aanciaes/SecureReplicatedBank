@@ -57,7 +57,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     ClientAddMoneyRequest cliAddRequest = (ClientAddMoneyRequest) objIn.readObject();
                     long nonce = (Long) objIn.readObject();
 
-                    appRes = addMoney(cliAddRequest, nonce);
+                    appRes = addMoney(cliAddRequest, nonce, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -67,13 +67,13 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     ClientTransferRequest cliRequest = (ClientTransferRequest) objIn.readObject();
                     long nonceTransfer = (Long) objIn.readObject();
 
-                    appRes = transferMoney(cliRequest, nonceTransfer);
+                    appRes = transferMoney(cliRequest, nonceTransfer, reqType);
                     objOut.writeObject(appRes);
 
                     break;
 
                 default:
-                    appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L);
+                    appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L, null);
                     objOut.writeObject(appRes);
             }
 
@@ -106,7 +106,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 case GET_ALL:
                     long nonceAll = (Long) objIn.readObject();
 
-                    appRes = listUsers(nonceAll);
+                    appRes = listUsers(nonceAll, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -114,13 +114,13 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     String userPublicKey = (String) objIn.readObject();
                     long nonce = (Long) objIn.readObject();
 
-                    appRes = getBalance(userPublicKey, nonce);
+                    appRes = getBalance(userPublicKey, nonce, reqType);
                     objOut.writeObject(appRes);
 
                     break;
                 default:
                     logger.log(Level.SEVERE, "Operation Unknown");
-                    appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L);
+                    appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L, null);
                     objOut.writeObject(appRes);
             }
 
@@ -139,19 +139,19 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     }
 
 
-    private ReplicaResponse listUsers(long nonce) {
-        return new ReplicaResponse(200, "Sucess", db, (nonce + 1));
+    private ReplicaResponse listUsers(long nonce, WalletOperationType operationType) {
+        return new ReplicaResponse(200, "Sucess", db, (nonce + 1), operationType);
     }
 
-    private ReplicaResponse getBalance(String userPublicKey, Long nonce) {
+    private ReplicaResponse getBalance(String userPublicKey, Long nonce, WalletOperationType operationType) {
         if (db.containsKey(userPublicKey)) {
-            return new ReplicaResponse(200, "Success", db.get(userPublicKey), (nonce + 1));
+            return new ReplicaResponse(200, "Success", db.get(userPublicKey), (nonce + 1), operationType);
         } else {
-            return new ReplicaResponse(404, "User does not exist", null, 0L);
+            return new ReplicaResponse(404, "User does not exist", null, 0L, null);
         }
     }
 
-    private ReplicaResponse addMoney(ClientAddMoneyRequest cliRequest, Long nonce) {
+    private ReplicaResponse addMoney(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
 
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
@@ -161,18 +161,18 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             db.put(cliRequest.getToPubKey(), db.get(cliRequest.getToPubKey()) + cliRequest.getAmount());
 
             logger.info(cliRequest.getAmount() + " generated to user " + cliRequest.getToPubKey());
-            return new ReplicaResponse(200, "Success", cliRequest.getAmount(), nonce + 1);
+            return new ReplicaResponse(200, "Success", cliRequest.getAmount(), nonce + 1, operationType);
         } else {
             logger.warning("No money generated. Amount must not be negative");
-            return new ReplicaResponse(400, "Amount must not be negative", null, 0L);
+            return new ReplicaResponse(400, "Amount must not be negative", null, 0L, null);
         }
     }
 
-    private ReplicaResponse transferMoney(ClientTransferRequest cliRequest, Long nonce) {
+    private ReplicaResponse transferMoney(ClientTransferRequest cliRequest, Long nonce, WalletOperationType operationType) {
 
         if (!db.containsKey(cliRequest.getFromPubKey())) {
             logger.warning("No money transferred. User does not exist");
-            return new ReplicaResponse(404, "User does not exist", null, 0L);
+            return new ReplicaResponse(404, "User does not exist", null, 0L, null);
         } else {
             if (cliRequest.getAmount() > 0) {
                 if (!db.containsKey(cliRequest.getToPubKey())) {
@@ -185,14 +185,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     performAtomicTransfer(cliRequest.getFromPubKey(), cliRequest.getToPubKey(), cliRequest.getAmount());
 
                     logger.info("Balance after transfer " + db.get(cliRequest.getFromPubKey()));
-                    return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1);
+                    return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1, operationType);
                 } else {
                     logger.warning("No money transferred. No money available in account");
-                    return new ReplicaResponse(400, "No money available in account", null, 0L);
+                    return new ReplicaResponse(400, "No money available in account", null, 0L, null);
                 }
             } else {
                 logger.warning("No money transferred. Amount must not be negative");
-                return new ReplicaResponse(400, "Amount must not be negative", null, 0L);
+                return new ReplicaResponse(400, "Amount must not be negative", null, 0L, null);
             }
         }
     }
