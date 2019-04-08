@@ -25,7 +25,7 @@ public class GetBalanceClient {
      * @param userKeyPair User public and private key
      */
     @SuppressWarnings("Duplicates")
-    public static void getBalance(WebTarget target, KeyPair userKeyPair) {
+    public static void getBalance(WebTarget target, int faults, KeyPair userKeyPair) {
         try {
             String userKeyString = Base64.getEncoder().encodeToString(userKeyPair.getPublic().getEncoded());
 
@@ -49,10 +49,9 @@ public class GetBalanceClient {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
                 logger.info("Current Balance: " + clientResponse.getBody());
 
-                int maxConflicts = clientResponse.getResponses().size() / 2;
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.GET_BALANCE);
 
-                if (conflicts >= maxConflicts) {
+                if (conflicts >= faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 }
             } else {

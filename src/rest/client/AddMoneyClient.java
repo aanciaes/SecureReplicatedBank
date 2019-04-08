@@ -31,7 +31,7 @@ public class AddMoneyClient {
      * @param amount               amount to add to the user
      */
     @SuppressWarnings("Duplicates")
-    public static void addMoney(WebTarget target, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, Double amount) {
+    public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, Double amount) {
 
         try {
             String toPubkString = Base64.getEncoder().encodeToString(destinationPublicKey.getEncoded());
@@ -61,11 +61,9 @@ public class AddMoneyClient {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
                 logger.debug("Amount Added: " + clientResponse.getBody());
 
-                int maxConflicts = clientResponse.getResponses().size() / 2;
-
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.GENERATE_MONEY);
 
-                if (conflicts >= maxConflicts) {
+                if (conflicts >= faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 }
             } else {

@@ -26,7 +26,7 @@ public class WalletJdkHttpServer {
         Configurator.setLevel(WalletServerResources.class.getName(), Level.INFO);
         Configurator.setLevel(ReplicaServer.class.getName(), Level.INFO);
 
-        CommandLine cmd = commandLineParser(args, port, replicaId);
+        CommandLine cmd = commandLineParser(args);
 
         //port
         if (cmd.hasOption('p')) {
@@ -65,7 +65,7 @@ public class WalletJdkHttpServer {
         System.err.println("SSL REST Bank Server ready @ " + baseUri);
     }
 
-    private static CommandLine commandLineParser(String[] args, Integer port, int replicaId) throws ParseException {
+    private static CommandLine commandLineParser(String[] args) throws ParseException {
         // create Options object
         Options options = new Options();
         options.addOption("p", "port", true, "port");

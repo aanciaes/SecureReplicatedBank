@@ -1,5 +1,10 @@
 package rest.client;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 
@@ -20,7 +25,7 @@ public class ClientMain {
 
     private static List<KeyPair> users = new ArrayList();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         //Configuring standard log levels
         Configurator.setLevel(AddMoneyClient.class.getName(), Level.INFO);
@@ -28,14 +33,20 @@ public class ClientMain {
         Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
         Configurator.setLevel(Utils.class.getName(), Level.INFO);
 
-        if (args.length == 1) {
-            //Debug mode
-            if (args[0].equals("-d")) {
-                Configurator.setLevel(AddMoneyClient.class.getName(), Level.DEBUG);
-                Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
-                Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
-                Configurator.setLevel(Utils.class.getName(), Level.DEBUG);
-            }
+        int faults = 1;
+
+        CommandLine cmd = commandLineParser(args);
+
+        if (cmd.hasOption("f")){
+            faults = Integer.parseInt(cmd.getOptionValue("f"));
+        }
+
+
+        if (cmd.hasOption("d")) {
+            Configurator.setLevel(AddMoneyClient.class.getName(), Level.DEBUG);
+            Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
+            Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
+            Configurator.setLevel(Utils.class.getName(), Level.DEBUG);
         }
 
         Client client = ClientBuilder.newBuilder()
@@ -49,18 +60,29 @@ public class ClientMain {
             try {
                 KeyPair kp = Utils.generateNewKeyPair(1024);
                 users.add(kp);
-                AddMoneyClient.addMoney(target, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), 1000.0);
+                AddMoneyClient.addMoney(target, faults,  AdminKeyLoader.loadPrivateKey(), kp.getPublic(), 1000.0);
                 nUsers++;
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        GetBalanceClient.getBalance(target, users.get(0));
+        GetBalanceClient.getBalance(target, faults, users.get(0));
 
-        TransferClient.transfer(target, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
-        TransferClient.transfer(target, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
+        TransferClient.transfer(target, faults, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
+        TransferClient.transfer(target, faults, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
 
-        GetBalanceClient.getBalance(target, users.get(0));
+        GetBalanceClient.getBalance(target, faults, users.get(0));
+    }
+
+    private static CommandLine commandLineParser(String[] args) throws ParseException {
+        // create Options object
+        Options options = new Options();
+        options.addOption("d", "debug", false, "debug mode");
+        options.addOption("f", "faults", false, "number of faults to tolerate mode");
+
+        CommandLineParser parser = new DefaultParser();
+
+        return parser.parse(options, args);
     }
 }

@@ -29,7 +29,7 @@ public class TransferClient {
      * @param toKey  Public key of the destniation user
      * @param amount Amount to transfer
      */
-    public static void transfer(WebTarget target, KeyPair kp, String toKey, Double amount) {
+    public static void transfer(WebTarget target, int faults, KeyPair kp, String toKey, Double amount) {
 
         try {
             String fromPubKString = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
@@ -62,10 +62,9 @@ public class TransferClient {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
                 logger.debug("Balance after transfer: " + clientResponse.getBody());
 
-                int maxConflicts = (Integer) (clientResponse.getResponses().size() / 2);
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.TRANSFER_MONEY);
 
-                if (conflicts >= maxConflicts) {
+                if (conflicts >= faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 }
             } else {
