@@ -38,7 +38,7 @@ public class ExtractorMessage {
         this.lastReceived = lastReceived;
     }
 
-    public int getNumberOfReplies () {
+    public int getNumberOfReplies() {
         return tomMessages.length;
     }
 }

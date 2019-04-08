@@ -1,10 +1,8 @@
 package rest.client;
 
-import bftsmart.reconfiguration.util.RSAKeyLoader;
-import bftsmart.tom.core.TOMSender;
-import bftsmart.tom.util.KeyLoader;
 import com.google.gson.Gson;
-import rest.server.model.*;
+import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientResponse;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -12,8 +10,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Signature;
-import java.util.Arrays;
 import java.util.Base64;
 
 public class AddMoneyClient {
@@ -50,11 +46,11 @@ public class AddMoneyClient {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
                 System.out.println("Amount Added: " + clientResponse.getBody());
 
-                int maxConflicts = (Integer)(clientResponse.getResponses().size() / 2);
+                int maxConflicts = (Integer) (clientResponse.getResponses().size() / 2);
 
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse);
 
-                if(conflicts >= maxConflicts){
+                if (conflicts >= maxConflicts) {
                     System.out.println("CONFLICT FOUND!");
                 }
             } else {

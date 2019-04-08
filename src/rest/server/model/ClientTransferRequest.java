@@ -61,7 +61,7 @@ public class ClientTransferRequest implements Serializable {
         this.signature = signature;
     }
 
-    public String getSerializeMessage(){
+    public String getSerializeMessage() {
         return fromPubKey + "," + toPubKey + "," + amount + ":" + nonce;
     }
 }

@@ -50,7 +50,7 @@ public class ClientAddMoneyRequest implements Serializable {
         this.signature = signature;
     }
 
-    public String getSerializeMessage(){
+    public String getSerializeMessage() {
         return toPubKey + "," + amount + ":" + nonce;
     }
 }

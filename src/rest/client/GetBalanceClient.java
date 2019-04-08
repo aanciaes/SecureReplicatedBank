@@ -1,16 +1,11 @@
 package rest.client;
 
-import bftsmart.reconfiguration.util.RSAKeyLoader;
-import bftsmart.tom.util.KeyLoader;
 import rest.server.model.ClientResponse;
-import rest.server.model.ReplicaResponse;
 
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.net.URLEncoder;
 import java.security.KeyPair;
-import java.security.PublicKey;
-import java.security.Signature;
 import java.util.Base64;
 
 public class GetBalanceClient {

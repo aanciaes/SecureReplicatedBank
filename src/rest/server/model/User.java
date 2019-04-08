@@ -1,8 +1,5 @@
 package rest.server.model;
 
-import bftsmart.reconfiguration.util.RSAKeyLoader;
-import bftsmart.tom.util.KeyLoader;
-
 import java.io.Serializable;
 import java.security.PublicKey;
 
@@ -11,7 +8,7 @@ public class User implements Serializable {
     private PublicKey pubK;
     private Double amount;
 
-    public User(int userId, Double amount){
+    public User(int userId, Double amount) {
         this.amount = amount;
 
     }

@@ -1,19 +1,14 @@
 package rest.client;
 
-import bftsmart.reconfiguration.util.RSAKeyLoader;
-import bftsmart.tom.util.KeyLoader;
 import com.google.gson.Gson;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientTransferRequest;
-import rest.server.model.ReplicaResponse;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.security.KeyPair;
-import java.security.PublicKey;
-import java.security.Signature;
 import java.util.Base64;
 
 public class TransferClient {
@@ -51,10 +46,10 @@ public class TransferClient {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
                 System.out.println("Balance after transfer: " + clientResponse.getBody());
 
-                int maxConflicts = (Integer)(clientResponse.getResponses().size() / 2);
+                int maxConflicts = (Integer) (clientResponse.getResponses().size() / 2);
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse);
 
-                if(conflicts >= maxConflicts){
+                if (conflicts >= maxConflicts) {
                     System.out.println("CONFLICT FOUND!");
                 }
             } else {

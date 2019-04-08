@@ -59,22 +59,20 @@ public class Utils {
         }
     }
 
-    public static int verifyReplicaResponse (long nonce, ClientResponse clientResponse) {
+    public static int verifyReplicaResponse(long nonce, ClientResponse clientResponse) {
         int conflicts = 0;
 
         for (ReplicaResponse replicaResponse : clientResponse.getResponses()) {
-            if(nonce + 1 != replicaResponse.getNonce()){
+            if (nonce + 1 != replicaResponse.getNonce()) {
                 conflicts++;
                 System.out.println("NONCE CONFLICT");
-            }
-            else if(!clientResponse.getBody().equals(replicaResponse.getBody()) ){
+            } else if (!clientResponse.getBody().equals(replicaResponse.getBody())) {
                 conflicts++;
                 System.out.println("AMOUNT CONFLICT");
-            }
-            else if(replicaResponse.getStatusCode() != 200){
+            } else if (replicaResponse.getStatusCode() != 200) {
                 conflicts++;
                 System.out.println("STATUS CONFLICT");
-            }else{
+            } else {
                 if (!Utils.verifyReplicaResponseSignature(
                         replicaResponse.getReplicaId(),
                         Base64.getDecoder().decode(replicaResponse.getSerializedMessage()),
