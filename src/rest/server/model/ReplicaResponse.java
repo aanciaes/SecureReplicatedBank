@@ -3,6 +3,9 @@ package rest.server.model;
 import java.io.Serializable;
 import java.util.Base64;
 
+/**
+ * Response that the replies that the replicas send to the http wallet server
+ */
 public class ReplicaResponse implements Serializable {
 
     private int statusCode;

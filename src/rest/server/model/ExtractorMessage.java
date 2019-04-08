@@ -2,6 +2,9 @@ package rest.server.model;
 
 import bftsmart.tom.core.messages.TOMMessage;
 
+/**
+ * Class representing all the replicas replies of a request
+ */
 public class ExtractorMessage {
 
     private TOMMessage[] tomMessages;

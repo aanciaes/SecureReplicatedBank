@@ -2,6 +2,9 @@ package rest.server.model;
 
 import java.io.Serializable;
 
+/**
+ * Input class of the transfer money request
+ */
 public class ClientTransferRequest implements Serializable {
 
     private String fromPubKey;

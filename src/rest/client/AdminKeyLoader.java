@@ -13,6 +13,10 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+/**
+ * Class that loads the specific keys for the admin user.
+ * This keys can be changed on runtime since it is always reading from the file. No cache is made
+ */
 public class AdminKeyLoader {
 
     public static PublicKey loadPublicKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
@@ -27,6 +31,13 @@ public class AdminKeyLoader {
         return getPrivateKeyFromString(key);
     }
 
+    /**
+     * Reads from file
+     *
+     * @param filename Filename to read from
+     * @return File as a string
+     * @throws IOException If filename does not exist
+     */
     private static String readFromFile(String filename) throws IOException {
         FileReader f = new FileReader(filename);
 
@@ -54,4 +65,5 @@ public class AdminKeyLoader {
         EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(key));
         return keyFactory.generatePublic(publicKeySpec);
     }
+    //
 }

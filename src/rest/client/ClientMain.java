@@ -13,19 +13,24 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-
+/**
+ * Main client. Runs all tests by calling the other clients
+ */
 public class ClientMain {
 
     private static List<KeyPair> users = new ArrayList();
 
     public static void main(String[] args) {
+
+        //Configuring standard log levels
         Configurator.setLevel(AddMoneyClient.class.getName(), Level.INFO);
         Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
         Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
         Configurator.setLevel(Utils.class.getName(), Level.INFO);
 
         if (args.length == 1) {
-            if (args[0].equals("-d")){
+            //Debug mode
+            if (args[0].equals("-d")) {
                 Configurator.setLevel(AddMoneyClient.class.getName(), Level.DEBUG);
                 Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
                 Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
@@ -40,7 +45,7 @@ public class ClientMain {
         URI baseURI = UriBuilder.fromUri("https://0.0.0.0:8080/wallet/").build();
         WebTarget target = client.target(baseURI);
         int nUsers = 0;
-        while (nUsers < 2) {
+        while (nUsers < 20) {
             try {
                 KeyPair kp = Utils.generateNewKeyPair(1024);
                 users.add(kp);
@@ -50,6 +55,7 @@ public class ClientMain {
                 e.printStackTrace();
             }
         }
+
         GetBalanceClient.getBalance(target, users.get(0));
 
         TransferClient.transfer(target, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);

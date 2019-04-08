@@ -14,10 +14,21 @@ import javax.ws.rs.core.Response;
 import java.security.KeyPair;
 import java.util.Base64;
 
+/**
+ * Client that transfers the money from one user to another
+ */
 public class TransferClient {
 
     private static Logger logger = LogManager.getLogger(TransferClient.class.getName());
 
+    /**
+     * Client that transfers the money from one user to another
+     *
+     * @param target WebTarget to the server
+     * @param kp     Public and private key of the user that wants to transfer money
+     * @param toKey  Public key of the destniation user
+     * @param amount Amount to transfer
+     */
     public static void transfer(WebTarget target, KeyPair kp, String toKey, Double amount) {
 
         try {

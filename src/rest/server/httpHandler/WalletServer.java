@@ -15,24 +15,56 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
+/**
+ * Wallet Server API
+ */
 @Path("/wallet")
 public interface WalletServer {
 
+    /**
+     * List all users and its balances. It does not goes to a consensus, for debug purposes only
+     *
+     * @param headers Headers of request (nonce)
+     * @return Client response with all users and balances and no replica reesponses
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     ClientResponse listUsers(@Context HttpHeaders headers);
 
+    /**
+     * Gets current balance of a user
+     *
+     * @param headers        Headers of the request
+     * @param userIdentifier User to get the balance
+     * @param signature      Signature of the request
+     * @return Client response with the balance of the user with all replica responses
+     */
     @GET
     @Path("/{userIdentifier}")
     @Produces(MediaType.APPLICATION_JSON)
     ClientResponse getAmount(@Context HttpHeaders headers, @PathParam("userIdentifier") String userIdentifier, @QueryParam("signature") String signature);
 
+    /**
+     * Generates money for a user
+     * Request must me made from a admin account.
+     *
+     * @param headers    Headers of request (nonce)
+     * @param cliRequest Client request with the amount to be generated and the user that will get the money
+     * @return Client response with the new balance of the user and with all replica responses
+     */
     @POST
     @Path("/generate")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     ClientResponse generateMoney(@Context HttpHeaders headers, ClientAddMoneyRequest cliRequest);
 
+    /**
+     * Transfers money from one user to another
+     *
+     * @param headers    Headers of request (nonce)
+     * @param cliRequest Client request with the amount to be transferred, the source and destination users
+     * @return Client response with the new balance of the source user and with all replica responses
+     */
     @POST
     @Path("/transfer")
     @Consumes(MediaType.APPLICATION_JSON)

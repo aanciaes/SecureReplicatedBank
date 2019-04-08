@@ -15,10 +15,21 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Base64;
 
+/**
+ * Client that adds money
+ */
 public class AddMoneyClient {
 
     private static Logger logger = LogManager.getLogger(AddMoneyClient.class.getName());
 
+    /**
+     * Client that adds money to a user.
+     *
+     * @param target               WebTarget to the server
+     * @param adminPrivateKey      Admin Private Key to sign the request
+     * @param destinationPublicKey Destination user public key
+     * @param amount               amount to add to the user
+     */
     @SuppressWarnings("Duplicates")
     public static void addMoney(WebTarget target, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, Double amount) {
 
@@ -39,11 +50,9 @@ public class AddMoneyClient {
 
             Gson gson = new Gson();
             String json = gson.toJson(clientRequest);
-            Long nonce = Utils.generateNonce();
+            long nonce = Utils.generateNonce();
             Response response = target.path("/generate").request().header("nonce", nonce)
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
-
-            //--- debug prints
 
             int status = response.getStatus();
             logger.info("Add Money Status: " + status);
