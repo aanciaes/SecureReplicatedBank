@@ -40,6 +40,7 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Restfull resources of wallet server
@@ -50,6 +51,8 @@ public class WalletServerResources implements WalletServer {
 
     private ServiceProxy serviceProxy;
     private CustomExtractor extractor;
+    private boolean unpredictable;
+    private ReplicaServer replicaServer;
 
     @SuppressWarnings("unchecked")
     WalletServerResources(int port, int replicaId, boolean unpredictable) {
@@ -57,42 +60,14 @@ public class WalletServerResources implements WalletServer {
         KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA512withRSA");
         extractor = new CustomExtractor();
 
-        new ReplicaServer(replicaId, unpredictable);
+        this.unpredictable = unpredictable;
+        replicaServer = new ReplicaServer(replicaId, unpredictable);
         serviceProxy = new ServiceProxy(replicaId, null, cmp, extractor, keyLoader);
     }
 
     @Override
     public ClientResponse listUsers(HttpHeaders headers) {
-        try {
-            Long nonce = getNonceFromHeader(headers);
-
-            byte[] reply = invokeOp(false, WalletOperationType.GET_ALL, nonce);
-            List<ReplicaResponse> replicaResponseList = convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages());
-
-            if (reply.length > 0) {
-                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
-                ObjectInput objIn = new ObjectInputStream(byteIn);
-
-                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
-
-                if (rs.getStatusCode() != 200) {
-                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
-                } else {
-                    Map<Long, User> body = (Map) rs.getBody();
-                    return new ClientResponse(body, replicaResponseList);//body.values().toArray(new User[0]);
-                }
-            } else {
-                throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            logger.error("Exception putting value into map: " + e.getMessage());
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            e.printStackTrace();
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
-        }
+        return new ClientResponse(replicaServer.getAllNoConsensus(), null);//body.values().toArray(new User[0]);
     }
 
     @Override
@@ -141,7 +116,7 @@ public class WalletServerResources implements WalletServer {
     @Override
     @SuppressWarnings("Duplicates")
     public ClientResponse generateMoney(HttpHeaders headers, ClientAddMoneyRequest cliRequest) {
-       logger.info(String.format("generating: %f for user: %s ---", cliRequest.getAmount(), cliRequest.getToPubKey()));
+        logger.info(String.format("generating: %f for user: %s ---", cliRequest.getAmount(), cliRequest.getToPubKey()));
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
@@ -176,7 +151,7 @@ public class WalletServerResources implements WalletServer {
             }
 
             List<ReplicaResponse> replicaResponses = convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages());
-            return new ClientResponse(rs.getBody(), replicaResponses);
+            return forceErrorForClient(new ClientResponse(rs.getBody(), replicaResponses));
 
         } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             logger.error(e.getMessage(), e);
@@ -260,20 +235,22 @@ public class WalletServerResources implements WalletServer {
     private List<ReplicaResponse> convertTomMessages(TOMMessage[] tomMessages) {
         List<ReplicaResponse> replicaResponseList = new ArrayList<ReplicaResponse>();
         for (TOMMessage tomMessage : tomMessages) {
-            byte[] content = tomMessage.getContent();
-            try {
-                ByteArrayInputStream byteIn = new ByteArrayInputStream(content);
-                ObjectInput objIn = new ObjectInputStream(byteIn);
-                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+            if (tomMessage != null) {
+                byte[] content = tomMessage.getContent();
+                try {
+                    ByteArrayInputStream byteIn = new ByteArrayInputStream(content);
+                    ObjectInput objIn = new ObjectInputStream(byteIn);
+                    ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
 
-                // Set serialized message and signature to client response
-                rs.setReplicaId(tomMessage.getSender());
-                rs.setSerializedMessage(tomMessage.serializedMessage);
-                rs.setSignature(tomMessage.serializedMessageSignature);
+                    // Set serialized message and signature to client response
+                    rs.setReplicaId(tomMessage.getSender());
+                    rs.setSerializedMessage(tomMessage.serializedMessage);
+                    rs.setSignature(tomMessage.serializedMessageSignature);
 
-                replicaResponseList.add(rs);
-            } catch (Exception e) {
-                e.printStackTrace();
+                    replicaResponseList.add(rs);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
         return replicaResponseList;
@@ -318,5 +295,58 @@ public class WalletServerResources implements WalletServer {
     private long getNonceFromHeader(HttpHeaders headers) {
         MultivaluedMap<String, String> headerParams = headers.getRequestHeaders();
         return new Long(headerParams.get("nonce").get(0));
+    }
+
+    private ClientResponse forceErrorForClient(ClientResponse clientResponse) {
+        if (timeForError()) {
+            switch (errorType()) {
+                case 0:
+                    //New body amount
+                    logger.debug("forcing error - wrong amount on response");
+                    clientResponse.setBody(123.0);
+                    break;
+                case 1:
+                    logger.debug("forcing error - wrong operation type on replica response");
+                    clientResponse.getResponses().get(0).setOperationType(WalletOperationType.TRANSFER_MONEY);
+                    break;
+                case 2:
+                    logger.debug("forcing error - wrong signature on replica response");
+                    clientResponse.getResponses().get(0).setSignature(new byte[0]);
+                    break;
+                case 3:
+                    logger.debug("forcing error - wrong nonce on replica response");
+                    clientResponse.getResponses().get(0).setNonce(123456789L);
+                    break;
+                case 4:
+                    logger.debug("forcing error - wrong status code on replica response");
+                    clientResponse.getResponses().get(0).setStatusCode(123);
+                    break;
+            }
+        }
+
+        return clientResponse;
+    }
+
+    private boolean timeForError() {
+        if (unpredictable) {
+
+            Random r = new Random();
+            int low = 0;
+            int high = 9;
+            int result = r.nextInt(high - low) + low;
+
+            // 10% of probability of error
+            return result == 0;
+        } else {
+            return false;
+        }
+    }
+
+    private int errorType() {
+        Random r = new Random();
+        int low = 0;
+        int high = 4;
+
+        return r.nextInt(high - low) + low;
     }
 }

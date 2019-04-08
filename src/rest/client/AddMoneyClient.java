@@ -43,8 +43,6 @@ public class AddMoneyClient {
             Response response = target.path("/generate").request().header("nonce", nonce)
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
-            //--- debug prints
-
             int status = response.getStatus();
             logger.info("Add Money Status: " + status);
 

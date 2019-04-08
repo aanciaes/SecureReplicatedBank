@@ -18,6 +18,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ReplicaServer extends DefaultSingleRecoverable {
@@ -78,7 +79,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 default:
                     appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L, null);
                     objOut.writeObject(appRes);
-                    logger.error("Operation Unknown", reqType);
+                    logger.error("Operation Unknown for Ordered op: " + reqType);
             }
 
             objOut.flush();
@@ -123,7 +124,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
                     break;
                 default:
-                    logger.error("Operation Unknown", reqType);
+                    logger.error("Operation Unknown for Unordered op: " + reqType);
                     appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L, null);
                     objOut.writeObject(appRes);
             }
@@ -149,7 +150,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
     private ReplicaResponse getBalance(String userPublicKey, Long nonce, WalletOperationType operationType) {
         if (db.containsKey(userPublicKey)) {
-            return new ReplicaResponse(200, "Success", db.get(userPublicKey), (nonce + 1), operationType);
+            return new ReplicaResponse(200, "Success", forceError(db.get(userPublicKey)), (nonce + 1), operationType);
         } else {
             return new ReplicaResponse(404, "User does not exist", null, 0L, null);
         }
@@ -162,6 +163,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             db.put(cliRequest.getToPubKey(), 0.0);
         }
         if (cliRequest.getAmount() > 0) {
+            cliRequest.setAmount(forceError(cliRequest.getAmount()));
             db.put(cliRequest.getToPubKey(), db.get(cliRequest.getToPubKey()) + cliRequest.getAmount());
 
             logger.debug(cliRequest.getAmount() + " generated to user " + cliRequest.getToPubKey());
@@ -186,6 +188,9 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 Double fromBalance = db.get(cliRequest.getFromPubKey());
 
                 if (fromBalance - cliRequest.getAmount() >= 0) {
+
+                    // Force error
+                    cliRequest.setAmount(forceError(cliRequest.getAmount()));
                     performAtomicTransfer(cliRequest.getFromPubKey(), cliRequest.getToPubKey(), cliRequest.getAmount());
 
                     logger.debug("Balance after transfer " + db.get(cliRequest.getFromPubKey()));
@@ -201,6 +206,10 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
+    public Map<String, Double> getAllNoConsensus () {
+        return db;
+    }
+
     /**
      * Performs the actual money transferring in an "atomic" way
      *
@@ -214,5 +223,29 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
         db.put(from, fromBalance - amount);
         db.put(to, toBalance + amount);
+    }
+
+    private double forceError (double amount) {
+        if (unpredictable) {
+            Random r = new Random();
+            int low = 0;
+            int high = 4;
+            int result = r.nextInt(high-low) + low;
+
+            // 20% of probability of error
+            if (result == 0){
+                Double lowEnd = amount + 1.0;
+                Double highEnd = amount + 10.0;
+
+                double wrongValue = r.nextInt((highEnd.intValue()-lowEnd.intValue())) + lowEnd;
+
+                logger.debug("Generating wrong value: " + wrongValue);
+                return wrongValue;
+            } else {
+                return amount;
+            }
+        } else {
+            return amount;
+        }
     }
 }

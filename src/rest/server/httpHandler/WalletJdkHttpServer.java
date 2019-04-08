@@ -21,6 +21,7 @@ public class WalletJdkHttpServer {
         int port = 8080;
         int replicaId = 0;
         boolean unpredictable = false;
+
         Configurator.setLevel(WalletServerResources.class.getName(), Level.INFO);
         Configurator.setLevel(ReplicaServer.class.getName(), Level.INFO);
 
