@@ -1,5 +1,10 @@
 package rest.server.httpHandler;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
@@ -13,31 +18,58 @@ import java.net.URI;
 public class WalletJdkHttpServer {
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2) {
-            System.err.println("Usage: WalletJdkHttpServer <port> <replica id>");
-            System.exit(-1);
-        }
-
+        int port = 8080;
+        int replicaId = 0;
+        boolean unpredictable = false;
         Configurator.setLevel(WalletServerResources.class.getName(), Level.INFO);
         Configurator.setLevel(ReplicaServer.class.getName(), Level.INFO);
 
-        int port = Integer.parseInt(args[0]);
-        int replicaId = Integer.parseInt(args[1]);
+        CommandLine cmd = commandLineParser(args, port, replicaId);
 
-        if (args.length == 3){
-            if (args[2].equals("-d")){
-                Configurator.setLevel(WalletServerResources.class.getName(), Level.DEBUG);
-                Configurator.setLevel(ReplicaServer.class.getName(), Level.DEBUG);
-            }
+        if (cmd.hasOption('p')) {
+            port = Integer.parseInt(cmd.getOptionValue('p'));
+        } else {
+            System.err.println("Usage: WalletJdkHttpServer -p <port> -id <replica id>");
+            System.exit(-1);
+        }
+
+        if (cmd.hasOption("id")) {
+            replicaId = Integer.parseInt(cmd.getOptionValue("id"));
+        } else {
+            System.err.println("Usage: WalletJdkHttpServer -p <port> -id <replica id>");
+            System.exit(-1);
+        }
+
+        if (cmd.hasOption('d')) {
+            Configurator.setLevel(WalletServerResources.class.getName(), Level.DEBUG);
+            Configurator.setLevel(ReplicaServer.class.getName(), Level.DEBUG);
+        }
+
+        if (cmd.hasOption('u')) {
+            unpredictable = true;
         }
 
         URI baseUri = UriBuilder.fromUri("https://0.0.0.0/").port(port).build();
 
         ResourceConfig config = new ResourceConfig();
-        config.register(new WalletServerResources(port, replicaId));
+        config.register(new WalletServerResources(port, replicaId, unpredictable));
 
         JdkHttpServerFactory.createHttpServer(baseUri, config, SSLContext.getDefault());
 
         System.err.println("SSL REST Bank Server ready @ " + baseUri);
+    }
+
+    private static CommandLine commandLineParser(String[] args, Integer port, int replicaId) throws ParseException {
+        // create Options object
+        Options options = new Options();
+        options.addOption("p", "port", true, "port");
+        options.addOption("id", "replicaId", true, "replica id");
+        options.addOption("d", "debug", false, "debug mode");
+        options.addOption("u", "unpredictable", false, "unpredictable mode");
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = parser.parse(options, args);
+
+        return cmd;
     }
 }

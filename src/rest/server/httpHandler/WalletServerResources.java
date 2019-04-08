@@ -52,12 +52,12 @@ public class WalletServerResources implements WalletServer {
     private CustomExtractor extractor;
 
     @SuppressWarnings("unchecked")
-    WalletServerResources(int port, int replicaId) {
+    WalletServerResources(int port, int replicaId, boolean unpredictable) {
         Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
         KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA512withRSA");
         extractor = new CustomExtractor();
 
-        new ReplicaServer(replicaId);
+        new ReplicaServer(replicaId, unpredictable);
         serviceProxy = new ServiceProxy(replicaId, null, cmp, extractor, keyLoader);
     }
 

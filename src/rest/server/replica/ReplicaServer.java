@@ -25,8 +25,10 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     private static Logger logger = LogManager.getLogger(ReplicaServer.class.getName());
 
     private Map<String, Double> db = new ConcurrentHashMap<>();
+    private boolean unpredictable;
 
-    public ReplicaServer(int id) {
+    public ReplicaServer(int id, boolean unpredictable) {
+        this.unpredictable = unpredictable;
         new ServiceReplica(id, this, this);
         logger.info("Replica Server #" + id + " started");
     }
