@@ -58,7 +58,7 @@ public class WalletJdkHttpServer {
         URI baseUri = UriBuilder.fromUri("https://0.0.0.0/").port(port).build();
 
         ResourceConfig config = new ResourceConfig();
-        config.register(new WalletServerResources(port, replicaId, unpredictable));
+        config.register(new WalletServerResources(replicaId, unpredictable));
 
         JdkHttpServerFactory.createHttpServer(baseUri, config, SSLContext.getDefault());
 

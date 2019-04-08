@@ -52,10 +52,9 @@ public class WalletServerResources implements WalletServer {
     private boolean unpredictable;
     private ReplicaServer replicaServer;
 
-    @SuppressWarnings("unchecked")
     WalletServerResources(int replicaId, boolean unpredictable) {
         //Default comparator
-        Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
+        Comparator<byte[]> cmp = (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
 
         //Default key loader
         KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA512withRSA");
