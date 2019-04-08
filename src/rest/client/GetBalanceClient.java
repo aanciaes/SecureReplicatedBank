@@ -52,7 +52,7 @@ public class GetBalanceClient {
 
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.GET_BALANCE);
 
-                if (conflicts >= faults) {
+                if (conflicts > faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 }
             } else {

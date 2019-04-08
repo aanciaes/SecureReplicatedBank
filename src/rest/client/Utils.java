@@ -146,7 +146,7 @@ public class Utils {
 
             return sig.verify(signature);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.warn(e.getMessage());
             return false;
         }
     }

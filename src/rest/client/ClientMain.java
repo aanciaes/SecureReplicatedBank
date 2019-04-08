@@ -44,8 +44,8 @@ public class ClientMain {
 
         if (cmd.hasOption("d")) {
             Configurator.setLevel(AddMoneyClient.class.getName(), Level.DEBUG);
-            Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
-            Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
+            Configurator.setLevel(GetBalanceClient.class.getName(), Level.DEBUG);
+            Configurator.setLevel(TransferClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(Utils.class.getName(), Level.DEBUG);
         }
 
@@ -56,7 +56,7 @@ public class ClientMain {
         URI baseURI = UriBuilder.fromUri("https://0.0.0.0:8080/wallet/").build();
         WebTarget target = client.target(baseURI);
         int nUsers = 0;
-        while (nUsers < 20) {
+        while (nUsers < 10) {
             try {
                 KeyPair kp = Utils.generateNewKeyPair(1024);
                 users.add(kp);

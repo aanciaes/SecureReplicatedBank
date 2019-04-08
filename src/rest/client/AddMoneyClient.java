@@ -64,7 +64,7 @@ public class AddMoneyClient {
 
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.GENERATE_MONEY);
 
-                if (conflicts >= faults) {
+                if (conflicts > faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 }
             } else {
