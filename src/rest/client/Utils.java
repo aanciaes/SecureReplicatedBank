@@ -2,6 +2,8 @@ package rest.client;
 
 import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.util.KeyLoader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 import rest.server.model.ReplicaResponse;
 
@@ -18,6 +20,9 @@ import java.security.Signature;
 import java.util.Base64;
 
 public class Utils {
+
+    private static Logger logger = LogManager.getLogger(Utils.class.getName());
+
 
     public static long generateNonce() {
         // create instance of SecureRandom class
@@ -63,22 +68,23 @@ public class Utils {
         int conflicts = 0;
 
         for (ReplicaResponse replicaResponse : clientResponse.getResponses()) {
+            logger.debug (String.format("ReplicaId: %d, Status: %d, body: %s", replicaResponse.getReplicaId(), replicaResponse.getStatusCode(), replicaResponse.getBody().toString()));
             if (nonce + 1 != replicaResponse.getNonce()) {
                 conflicts++;
-                System.out.println("NONCE CONFLICT");
+                logger.warn("NONCE CONFLICT");
             } else if (!clientResponse.getBody().equals(replicaResponse.getBody())) {
                 conflicts++;
-                System.out.println("AMOUNT CONFLICT");
+                logger.warn("AMOUNT CONFLICT");
             } else if (replicaResponse.getStatusCode() != 200) {
                 conflicts++;
-                System.out.println("STATUS CONFLICT");
+                logger.warn("STATUS CONFLICT");
             } else {
                 if (!Utils.verifyReplicaResponseSignature(
                         replicaResponse.getReplicaId(),
                         Base64.getDecoder().decode(replicaResponse.getSerializedMessage()),
                         Base64.getDecoder().decode(replicaResponse.getSignature()))
                 ) {
-                    System.out.println("SIGNATURE CONFLICT");
+                    logger.warn("SIGNATURE CONFLICT");
                     conflicts++;
                 }
             }
