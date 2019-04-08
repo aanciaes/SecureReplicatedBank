@@ -19,13 +19,17 @@ public class ClientMain {
     private static List<KeyPair> users = new ArrayList();
 
     public static void main(String[] args) {
-        Configurator.setRootLevel(Level.INFO);
+        Configurator.setLevel(AddMoneyClient.class.getName(), Level.INFO);
+        Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
+        Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
+        Configurator.setLevel(Utils.class.getName(), Level.INFO);
 
         if (args.length == 1) {
-            boolean debug = Boolean.parseBoolean(args[0]);
-
-            if (debug) {
-                Configurator.setRootLevel(Level.DEBUG);
+            if (args[0].equals("-d")){
+                Configurator.setLevel(AddMoneyClient.class.getName(), Level.DEBUG);
+                Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
+                Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
+                Configurator.setLevel(Utils.class.getName(), Level.DEBUG);
             }
         }
 
@@ -46,11 +50,11 @@ public class ClientMain {
                 e.printStackTrace();
             }
         }
-        /*GetBalanceClient.getBalance(target, users.get(0));
+        GetBalanceClient.getBalance(target, users.get(0));
 
         TransferClient.transfer(target, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
         TransferClient.transfer(target, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
 
-        GetBalanceClient.getBalance(target, users.get(0));*/
+        GetBalanceClient.getBalance(target, users.get(0));
     }
 }

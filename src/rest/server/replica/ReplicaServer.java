@@ -3,6 +3,8 @@ package rest.server.replica;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientTransferRequest;
 import rest.server.model.ReplicaResponse;
@@ -17,13 +19,12 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ReplicaServer extends DefaultSingleRecoverable {
 
+    private static Logger logger = LogManager.getLogger(ReplicaServer.class.getName());
+
     private Map<String, Double> db = new ConcurrentHashMap<>();
-    private Logger logger = Logger.getLogger(ReplicaServer.class.getName());
 
     public ReplicaServer(int id) {
         new ServiceReplica(id, this, this);
@@ -75,6 +76,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 default:
                     appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L, null);
                     objOut.writeObject(appRes);
+                    logger.error("Operation Unknown", reqType);
             }
 
             objOut.flush();
@@ -82,9 +84,9 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             reply = byteOut.toByteArray();
 
         } catch (IOException | ClassNotFoundException e) {
-            logger.log(Level.SEVERE, "Ocurred during map operation execution", e);
+            logger.error("Ocurred during map operation execution", e);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.error(e.getMessage(), e);
             e.printStackTrace();
         }
         return reply;
@@ -119,7 +121,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
                     break;
                 default:
-                    logger.log(Level.SEVERE, "Operation Unknown");
+                    logger.error("Operation Unknown", reqType);
                     appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L, null);
                     objOut.writeObject(appRes);
             }
@@ -129,9 +131,9 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             reply = byteOut.toByteArray();
 
         } catch (IOException | ClassNotFoundException e) {
-            logger.log(Level.SEVERE, "Ocurred during map operation execution", e);
+            logger.error("Ocurred during map operation execution", e);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.error(e.getMessage(), e);
             e.printStackTrace();
         }
 
@@ -163,7 +165,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             logger.info(cliRequest.getAmount() + " generated to user " + cliRequest.getToPubKey());
             return new ReplicaResponse(200, "Success", cliRequest.getAmount(), nonce + 1, operationType);
         } else {
-            logger.warning("No money generated. Amount must not be negative");
+            logger.warn("No money generated. Amount must not be negative");
             return new ReplicaResponse(400, "Amount must not be negative", null, 0L, null);
         }
     }
@@ -171,7 +173,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     private ReplicaResponse transferMoney(ClientTransferRequest cliRequest, Long nonce, WalletOperationType operationType) {
 
         if (!db.containsKey(cliRequest.getFromPubKey())) {
-            logger.warning("No money transferred. User does not exist");
+            logger.warn("No money transferred. User does not exist");
             return new ReplicaResponse(404, "User does not exist", null, 0L, null);
         } else {
             if (cliRequest.getAmount() > 0) {
@@ -187,11 +189,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     logger.info("Balance after transfer " + db.get(cliRequest.getFromPubKey()));
                     return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1, operationType);
                 } else {
-                    logger.warning("No money transferred. No money available in account");
+                    logger.warn("No money transferred. No money available in account");
                     return new ReplicaResponse(400, "No money available in account", null, 0L, null);
                 }
             } else {
-                logger.warning("No money transferred. Amount must not be negative");
+                logger.warn("No money transferred. Amount must not be negative");
                 return new ReplicaResponse(400, "Amount must not be negative", null, 0L, null);
             }
         }

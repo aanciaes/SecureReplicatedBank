@@ -4,6 +4,8 @@ import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rest.client.AdminKeyLoader;
 import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
@@ -38,15 +40,13 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Restfull resources of wallet server
  */
 public class WalletServerResources implements WalletServer {
 
-    private Logger logger = Logger.getLogger(WalletServerResources.class.getName());
+    private static Logger logger = LogManager.getLogger(WalletServerResources.class.getName());
 
     private ServiceProxy serviceProxy;
     private CustomExtractor extractor;
@@ -86,10 +86,10 @@ public class WalletServerResources implements WalletServer {
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
-            System.out.println("Exception putting value into map: " + e.getMessage());
+            logger.error("Exception putting value into map: " + e.getMessage());
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.error(e.getMessage(), e);
             e.printStackTrace();
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -98,7 +98,7 @@ public class WalletServerResources implements WalletServer {
     @Override
     @SuppressWarnings("Duplicates")
     public ClientResponse getAmount(HttpHeaders headers, String userIdentifier, String signature) {
-        System.err.printf("--- getting balance for user:for user: %s ---\n", userIdentifier);
+        logger.info(String.format("getting balance for user:for user: %s ---", userIdentifier));
 
         try {
             long nonce = getNonceFromHeader(headers);
@@ -133,7 +133,7 @@ public class WalletServerResources implements WalletServer {
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.error(e.getMessage(), e);
             throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
@@ -141,7 +141,7 @@ public class WalletServerResources implements WalletServer {
     @Override
     @SuppressWarnings("Duplicates")
     public ClientResponse generateMoney(HttpHeaders headers, ClientAddMoneyRequest cliRequest) {
-        System.err.printf("--- generating: %f for user: %s ---\n", cliRequest.getAmount(), cliRequest.getToPubKey());
+       logger.info(String.format("generating: %f for user: %s ---", cliRequest.getAmount(), cliRequest.getToPubKey()));
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
@@ -179,7 +179,7 @@ public class WalletServerResources implements WalletServer {
             return new ClientResponse(rs.getBody(), replicaResponses);
 
         } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.error(e.getMessage(), e);
             e.printStackTrace();
             throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -188,7 +188,7 @@ public class WalletServerResources implements WalletServer {
     @Override
     @SuppressWarnings("Duplicates")
     public ClientResponse transferMoney(HttpHeaders headers, ClientTransferRequest cliRequest) {
-        System.err.printf("--- transfering: %f from user: %s to user: %s\n", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey());
+        logger.info(String.format("transfering: %f from user: %s to user: %s", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey()));
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
@@ -224,7 +224,7 @@ public class WalletServerResources implements WalletServer {
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
         } catch (IOException | ClassNotFoundException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.error(e.getMessage(), e);
             e.printStackTrace();
             throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -248,10 +248,10 @@ public class WalletServerResources implements WalletServer {
 
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Exception putting value into map: " + e.getMessage());
+            logger.error("Exception putting value into map: " + e.getMessage());
             return new byte[0];
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.error(e.getMessage(), e);
             e.printStackTrace();
             return new byte[0];
         }
@@ -292,7 +292,6 @@ public class WalletServerResources implements WalletServer {
     }
 
     private PublicKey generatePublicKeyFromString(String key) {
-
         try {
             byte[] byteKey = Base64.getDecoder().decode(key);
             X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
