@@ -3,6 +3,8 @@ package rest.server.httpHandler;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
@@ -16,6 +18,8 @@ import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
 public class WalletJdkHttpServer {
+
+    private static Options cmdOptions = new Options();;
 
     public static void main(String[] args) throws Exception {
         int port = 8080;
@@ -32,7 +36,9 @@ public class WalletJdkHttpServer {
         if (cmd.hasOption('p')) {
             port = Integer.parseInt(cmd.getOptionValue('p'));
         } else {
-            System.err.println("Usage: WalletJdkHttpServer -p <port> -id <replica id>");
+            // automatically generate the help statement
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp( "WalletJdkHttpServer -p <port> -id <replicaId> [OPTIONS]", cmdOptions );
             System.exit(-1);
         }
 
@@ -40,7 +46,9 @@ public class WalletJdkHttpServer {
         if (cmd.hasOption("id")) {
             replicaId = Integer.parseInt(cmd.getOptionValue("id"));
         } else {
-            System.err.println("Usage: WalletJdkHttpServer -p <port> -id <replica id>");
+            // automatically generate the help statement
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp( "WalletJdkHttpServer -p <port> -id <replicaId> [OPTIONS]", cmdOptions );
             System.exit(-1);
         }
 
@@ -72,16 +80,22 @@ public class WalletJdkHttpServer {
     }
 
     private static CommandLine commandLineParser(String[] args) throws ParseException {
-        // create Options object
-        Options options = new Options();
-        options.addOption("p", "port", true, "port");
-        options.addOption("id", "replicaId", true, "replica id");
-        options.addOption("d", "debug", false, "debug mode");
-        options.addOption("t", "tests", false, "test mode, no prints");
-        options.addOption("u", "unpredictable", false, "unpredictable mode");
+        cmdOptions.addRequiredOption("p", "port", true, "port");
+        cmdOptions.addRequiredOption("id", "replicaId", true, "replica id");
+        cmdOptions.addOption("d", "debug", false, "debug mode");
+        cmdOptions.addOption("t", "tests", false, "test mode, no prints");
+        cmdOptions.addOption("u", "unpredictable", false, "unpredictable mode");
 
         CommandLineParser parser = new DefaultParser();
 
-        return parser.parse(options, args);
+        try {
+            return parser.parse(cmdOptions, args);
+        } catch (MissingOptionException missingOptionException) {
+            // automatically generate the help statement
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp( "WalletJdkHttpServer -p <port> -id <replicaId> [OPTIONS]", cmdOptions );
+            System.exit(-1);
+            return null;
+        }
     }
 }
