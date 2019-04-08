@@ -162,7 +162,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         if (cliRequest.getAmount() > 0) {
             db.put(cliRequest.getToPubKey(), db.get(cliRequest.getToPubKey()) + cliRequest.getAmount());
 
-            logger.info(cliRequest.getAmount() + " generated to user " + cliRequest.getToPubKey());
+            logger.debug(cliRequest.getAmount() + " generated to user " + cliRequest.getToPubKey());
             return new ReplicaResponse(200, "Success", cliRequest.getAmount(), nonce + 1, operationType);
         } else {
             logger.warn("No money generated. Amount must not be negative");
@@ -186,7 +186,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 if (fromBalance - cliRequest.getAmount() >= 0) {
                     performAtomicTransfer(cliRequest.getFromPubKey(), cliRequest.getToPubKey(), cliRequest.getAmount());
 
-                    logger.info("Balance after transfer " + db.get(cliRequest.getFromPubKey()));
+                    logger.debug("Balance after transfer " + db.get(cliRequest.getFromPubKey()));
                     return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1, operationType);
                 } else {
                     logger.warn("No money transferred. No money available in account");
