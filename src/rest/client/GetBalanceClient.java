@@ -11,11 +11,19 @@ import java.net.URLEncoder;
 import java.security.KeyPair;
 import java.util.Base64;
 
-
+/**
+ * Client that returns the balance of a user
+ */
 public class GetBalanceClient {
 
     private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
 
+    /**
+     * Client that returns the balance of a user
+     *
+     * @param target      WebTarget to the server
+     * @param userKeyPair User public and private key
+     */
     @SuppressWarnings("Duplicates")
     public static void getBalance(WebTarget target, KeyPair userKeyPair) {
         try {

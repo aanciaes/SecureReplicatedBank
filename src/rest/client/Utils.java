@@ -24,6 +24,11 @@ public class Utils {
 
     private static Logger logger = LogManager.getLogger(Utils.class.getName());
 
+    /**
+     * Generates a long random nonce
+     *
+     * @return Long random nonce
+     */
     public static long generateNonce() {
         // create instance of SecureRandom class
         SecureRandom rand = new SecureRandom();
@@ -31,6 +36,12 @@ public class Utils {
         return rand.nextLong();
     }
 
+    /**
+     * Generates a new KeyPair
+     *
+     * @param size size of the private key
+     * @return A new KeyPair, containing a public and a private key with given size
+     */
     public static KeyPair generateNewKeyPair(int size) {
 
         try {
@@ -44,6 +55,12 @@ public class Utils {
         }
     }
 
+    /**
+     * Hash a specific message with SHA-512 algorithm
+     *
+     * @param messageBytes data to hash
+     * @return The hash of data
+     */
     public static byte[] hashMessage(byte[] messageBytes) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
@@ -54,6 +71,13 @@ public class Utils {
         }
     }
 
+    /**
+     * Encrypts a some data with a key
+     *
+     * @param key     Key to encrypt message
+     * @param message data to encrypt
+     * @return Encrypted data
+     */
     public static byte[] encryptMessage(Key key, byte[] message) {
         try {
             Cipher c = Cipher.getInstance("RSA", "SunJCE");
@@ -64,6 +88,14 @@ public class Utils {
         }
     }
 
+    /**
+     * Verifies a replica response. It verifies ot signature, the nonce to avoid replaying, its operation, its amount and its status
+     *
+     * @param nonce          Nonce to verify against
+     * @param clientResponse Client Response containing all replica responses to be verified
+     * @param operationType  Operation type to verify against
+     * @return The number of conflicts, or number of verification errors on all client client requests
+     */
     public static int verifyReplicaResponse(long nonce, ClientResponse clientResponse, WalletOperationType operationType) {
         int conflicts = 0;
 
@@ -95,6 +127,14 @@ public class Utils {
         return conflicts;
     }
 
+    /**
+     * Verifies a replica response signature
+     *
+     * @param replicaId         Replica Id that responded
+     * @param serializedMessage Message serialized
+     * @param signature         Signature
+     * @return true if the signature is valid, false otherwise
+     */
     private static boolean verifyReplicaResponseSignature(int replicaId, byte[] serializedMessage, byte[] signature) {
         try {
             KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA512withRSA");
@@ -111,6 +151,9 @@ public class Utils {
         }
     }
 
+    /**
+     * Insecure Hostname verifier. So the client accepts self-signed certificates
+     */
     static public class InsecureHostnameVerifier implements HostnameVerifier {
         @Override
         public boolean verify(String hostname, SSLSession session) {

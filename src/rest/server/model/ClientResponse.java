@@ -3,6 +3,9 @@ package rest.server.model;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * Response that the http wallet server returns to the clients
+ */
 public class ClientResponse implements Serializable {
 
     private Object body;

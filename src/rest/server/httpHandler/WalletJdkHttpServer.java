@@ -22,11 +22,13 @@ public class WalletJdkHttpServer {
         int replicaId = 0;
         boolean unpredictable = false;
 
+        //Set default log levels
         Configurator.setLevel(WalletServerResources.class.getName(), Level.INFO);
         Configurator.setLevel(ReplicaServer.class.getName(), Level.INFO);
 
         CommandLine cmd = commandLineParser(args, port, replicaId);
 
+        //port
         if (cmd.hasOption('p')) {
             port = Integer.parseInt(cmd.getOptionValue('p'));
         } else {
@@ -34,6 +36,7 @@ public class WalletJdkHttpServer {
             System.exit(-1);
         }
 
+        //replica id
         if (cmd.hasOption("id")) {
             replicaId = Integer.parseInt(cmd.getOptionValue("id"));
         } else {
@@ -41,11 +44,13 @@ public class WalletJdkHttpServer {
             System.exit(-1);
         }
 
+        //Set debug level
         if (cmd.hasOption('d')) {
             Configurator.setLevel(WalletServerResources.class.getName(), Level.DEBUG);
             Configurator.setLevel(ReplicaServer.class.getName(), Level.DEBUG);
         }
 
+        //Set server unpredictable mode
         if (cmd.hasOption('u')) {
             unpredictable = true;
         }
@@ -69,8 +74,7 @@ public class WalletJdkHttpServer {
         options.addOption("u", "unpredictable", false, "unpredictable mode");
 
         CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
 
-        return cmd;
+        return parser.parse(options, args);
     }
 }

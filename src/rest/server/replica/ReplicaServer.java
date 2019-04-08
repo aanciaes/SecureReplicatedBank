@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Represents the replica. This is the class that holds all the data of the system, currently saved in memory
+ */
 public class ReplicaServer extends DefaultSingleRecoverable {
 
     private static Logger logger = LogManager.getLogger(ReplicaServer.class.getName());
@@ -108,13 +111,6 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             ReplicaResponse appRes;
 
             switch (reqType) {
-                case GET_ALL:
-                    long nonceAll = (Long) objIn.readObject();
-
-                    appRes = listUsers(nonceAll, reqType);
-                    objOut.writeObject(appRes);
-
-                    break;
                 case GET_BALANCE:
                     String userPublicKey = (String) objIn.readObject();
                     long nonce = (Long) objIn.readObject();
@@ -143,11 +139,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         return reply;
     }
 
-
-    private ReplicaResponse listUsers(long nonce, WalletOperationType operationType) {
-        return new ReplicaResponse(200, "Sucess", db, (nonce + 1), operationType);
-    }
-
+    /**
+     * Returns the balance of a user
+     *
+     * @param userPublicKey User
+     * @param nonce         Nonce of the operation
+     * @param operationType Type of the operation
+     * @return Replica response containing the balance of the user
+     */
     private ReplicaResponse getBalance(String userPublicKey, Long nonce, WalletOperationType operationType) {
         if (db.containsKey(userPublicKey)) {
             return new ReplicaResponse(200, "Success", forceError(db.get(userPublicKey)), (nonce + 1), operationType);
@@ -156,6 +155,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
+    /**
+     * Generates some money to a user
+     *
+     * @param cliRequest    Client Request containing the destination user and the amount among other information
+     * @param nonce         Nonce of the operation
+     * @param operationType Type of the operation
+     * @return Replica response containing the new balance of the user
+     */
     private ReplicaResponse addMoney(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
 
         // Creates new destination user, if not exists
@@ -174,6 +181,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
+    /**
+     * Transfers some money from a source user to a destination user
+     *
+     * @param cliRequest    Client Request containing the source and destination user and the amount among other information
+     * @param nonce
+     * @param operationType
+     * @return
+     */
     private ReplicaResponse transferMoney(ClientTransferRequest cliRequest, Long nonce, WalletOperationType operationType) {
 
         if (!db.containsKey(cliRequest.getFromPubKey())) {
@@ -206,7 +221,8 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    public Map<String, Double> getAllNoConsensus () {
+    // For debug purposes only. Return all users of the current server directly
+    public Map<String, Double> getAllNoConsensus() {
         return db;
     }
 
@@ -225,19 +241,25 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         db.put(to, toBalance + amount);
     }
 
-    private double forceError (double amount) {
+    /**
+     * Forces an error of an amount if in unpredictable mode.
+     *
+     * @param amount Amount to be changed or not depending on unpredictable mode and probability
+     * @return Wrong amount or right amount depending on unpredictable mode and probability
+     */
+    private double forceError(double amount) {
         if (unpredictable) {
             Random r = new Random();
             int low = 0;
             int high = 4;
-            int result = r.nextInt(high-low) + low;
+            int result = r.nextInt(high - low) + low;
 
             // 20% of probability of error
-            if (result == 0){
+            if (result == 0) {
                 Double lowEnd = amount + 1.0;
                 Double highEnd = amount + 10.0;
 
-                double wrongValue = r.nextInt((highEnd.intValue()-lowEnd.intValue())) + lowEnd;
+                double wrongValue = r.nextInt((highEnd.intValue() - lowEnd.intValue())) + lowEnd;
 
                 logger.debug("Generating wrong value: " + wrongValue);
                 return wrongValue;

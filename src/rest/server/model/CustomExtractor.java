@@ -10,6 +10,10 @@ import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Implementation of the bft smart extractor in order to save all responses from all the replicas
+ * All extractor messages will be save with a long as a key. This long identifies a request, so that multiple and concurrent requests all have a different set of messages
+ */
 public class CustomExtractor implements Extractor {
 
     private Map<Long, ExtractorMessage> rounds;

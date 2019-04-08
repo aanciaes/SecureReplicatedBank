@@ -2,6 +2,9 @@ package rest.server.model;
 
 import java.io.Serializable;
 
+/**
+ * Input class of the add money request
+ */
 public class ClientAddMoneyRequest implements Serializable {
     private String toPubKey;
     private Double amount;

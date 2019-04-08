@@ -12,7 +12,6 @@ import rest.server.model.ClientResponse;
 import rest.server.model.ClientTransferRequest;
 import rest.server.model.CustomExtractor;
 import rest.server.model.ReplicaResponse;
-import rest.server.model.User;
 import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
 
@@ -39,11 +38,10 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 /**
- * Restfull resources of wallet server
+ * Restful resources of wallet server
  */
 public class WalletServerResources implements WalletServer {
 
@@ -55,8 +53,11 @@ public class WalletServerResources implements WalletServer {
     private ReplicaServer replicaServer;
 
     @SuppressWarnings("unchecked")
-    WalletServerResources(int port, int replicaId, boolean unpredictable) {
+    WalletServerResources(int replicaId, boolean unpredictable) {
+        //Default comparator
         Comparator cmp = (Comparator<byte[]>) (o1, o2) -> Arrays.equals(o1, o2) ? 0 : -1;
+
+        //Default key loader
         KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA512withRSA");
         extractor = new CustomExtractor();
 
@@ -65,6 +66,7 @@ public class WalletServerResources implements WalletServer {
         serviceProxy = new ServiceProxy(replicaId, null, cmp, extractor, keyLoader);
     }
 
+    //For debug purposes only
     @Override
     public ClientResponse listUsers(HttpHeaders headers) {
         return new ClientResponse(replicaServer.getAllNoConsensus(), null);//body.values().toArray(new User[0]);
@@ -81,10 +83,12 @@ public class WalletServerResources implements WalletServer {
             byte[] signedHash = decryptRequest(generatePublicKeyFromString(userIdentifier), Base64.getDecoder().decode(signature));
 
             if (signedHash == null) {
+                //hash mismatch. A user is trying to get the balance of another user
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
 
             if (Arrays.equals(localHash, signedHash)) {
+                //hash mismatch. A user is trying to get the balance of another user
                 byte[] reply = invokeOp(
                         false,
                         WalletOperationType.GET_BALANCE,
@@ -102,7 +106,8 @@ public class WalletServerResources implements WalletServer {
                 }
 
                 List<ReplicaResponse> replicaResponses = convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages());
-                return new ClientResponse(rs.getBody(), replicaResponses);
+
+                return forceErrorForClient(new ClientResponse(rs.getBody(), replicaResponses));
             } else {
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
@@ -205,6 +210,14 @@ public class WalletServerResources implements WalletServer {
         }
     }
 
+    /**
+     * Invokes an operation to the replicas
+     *
+     * @param ordered   If the operation needs to be ordered to the state machine or not
+     * @param operation Operation type that is being performed
+     * @param args      Arguments to send to the replicas
+     * @return The response from the replica
+     */
     private byte[] invokeOp(boolean ordered, WalletOperationType operation, Object... args) {
         try (
                 ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
@@ -232,6 +245,13 @@ public class WalletServerResources implements WalletServer {
         }
     }
 
+    /**
+     * Converts the replica responses from tomMessage to a more controlled class
+     * Sets the replica Id for that message, and its serialization and signature
+     *
+     * @param tomMessages Tom messages to be parses
+     * @return List of replica responses
+     */
     private List<ReplicaResponse> convertTomMessages(TOMMessage[] tomMessages) {
         List<ReplicaResponse> replicaResponseList = new ArrayList<ReplicaResponse>();
         for (TOMMessage tomMessage : tomMessages) {
@@ -256,6 +276,12 @@ public class WalletServerResources implements WalletServer {
         return replicaResponseList;
     }
 
+    /**
+     * Generates an hash for a message with SHA-512 algorithm
+     *
+     * @param toHash Message to hash
+     * @return Hashed message
+     */
     private byte[] generateHash(byte[] toHash) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
@@ -268,6 +294,12 @@ public class WalletServerResources implements WalletServer {
         return null;
     }
 
+    /**
+     * Creates a class java.security.PublicKey from a string
+     *
+     * @param key Key in string format
+     * @return java.security.PublicKey
+     */
     private PublicKey generatePublicKeyFromString(String key) {
         try {
             byte[] byteKey = Base64.getDecoder().decode(key);
@@ -281,6 +313,13 @@ public class WalletServerResources implements WalletServer {
         }
     }
 
+    /**
+     * Decrypts a message with a given key
+     *
+     * @param pubk The key to decrypt the message
+     * @param data The data to be decrypted
+     * @return data in plain text
+     */
     private byte[] decryptRequest(PublicKey pubk, byte[] data) {
         try {
             Cipher c = Cipher.getInstance("RSA", "SunJCE");
@@ -292,16 +331,27 @@ public class WalletServerResources implements WalletServer {
         }
     }
 
+    /**
+     * Extract nonce from the request headers
+     *
+     * @param headers Headers of request
+     * @return Long passed from the client
+     */
     private long getNonceFromHeader(HttpHeaders headers) {
         MultivaluedMap<String, String> headerParams = headers.getRequestHeaders();
         return new Long(headerParams.get("nonce").get(0));
     }
 
+    /**
+     * Forces the server to return an error if in unpredictable mode
+     *
+     * @param clientResponse Client response to be returned to the user
+     * @return If in unpredictable mode, client response with forced errors. If not, the same client response as passed in the arguments
+     */
     private ClientResponse forceErrorForClient(ClientResponse clientResponse) {
         if (timeForError()) {
             switch (errorType()) {
                 case 0:
-                    //New body amount
                     logger.debug("forcing error - wrong amount on response");
                     clientResponse.setBody(123.0);
                     break;
@@ -327,6 +377,12 @@ public class WalletServerResources implements WalletServer {
         return clientResponse;
     }
 
+    /**
+     * Computes if it is time to force an error
+     * If in unpredictable mode, errors have a 10 percent chance to occur
+     *
+     * @return Force error or not based on unpredictable mode and probability
+     */
     private boolean timeForError() {
         if (unpredictable) {
 
@@ -342,6 +398,11 @@ public class WalletServerResources implements WalletServer {
         }
     }
 
+    /**
+     * Randomises a forced error type
+     *
+     * @return Integer representing a forced error type
+     */
     private int errorType() {
         Random r = new Random();
         int low = 0;
