@@ -55,6 +55,7 @@ public class ClientMain {
 
         URI baseURI = UriBuilder.fromUri("https://0.0.0.0:8080/wallet/").build();
         WebTarget target = client.target(baseURI);
+
         int nUsers = 0;
         while (nUsers < 10) {
             try {
@@ -67,12 +68,24 @@ public class ClientMain {
             }
         }
 
+
+        Thread thread1 = new Thread(new GetBalanceTest(target, faults));
+        thread1.start();
+
+        Thread thread2 = new Thread(new GetBalanceTest(target, faults));
+        thread2.start();
+
+        Thread thread3 = new Thread(new GetBalanceTest(target, faults));
+        thread3.start();
+
+        /*
         GetBalanceClient.getBalance(target, faults, users.get(0));
 
         TransferClient.transfer(target, faults, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
         TransferClient.transfer(target, faults, users.get(0), Base64.getEncoder().encodeToString(users.get(1).getPublic().getEncoded()), 100.0);
 
         GetBalanceClient.getBalance(target, faults, users.get(0));
+        */
     }
 
     private static CommandLine commandLineParser(String[] args) throws ParseException {
@@ -84,5 +97,20 @@ public class ClientMain {
         CommandLineParser parser = new DefaultParser();
 
         return parser.parse(options, args);
+    }
+
+    static class GetBalanceTest implements Runnable{
+        final int faults;
+        final WebTarget target;
+
+        public GetBalanceTest(WebTarget target, int faults){
+            this.faults = faults;
+            this.target = target;
+        }
+        @Override
+        public void run() {
+            GetBalanceClient.getBalance(target, faults, users.get(0));
+            GetBalanceClient.getBalance(target, faults, users.get(0));
+        }
     }
 }
