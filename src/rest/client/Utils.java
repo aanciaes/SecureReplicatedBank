@@ -1,14 +1,20 @@
 package rest.client;
 
+import bftsmart.reconfiguration.util.RSAKeyLoader;
+import bftsmart.tom.util.KeyLoader;
+import rest.server.model.ClientResponse;
+import rest.server.model.ReplicaResponse;
+
 import javax.crypto.Cipher;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.security.*;
-import java.security.spec.EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
 import java.util.Base64;
 
 public class Utils {
@@ -20,7 +26,7 @@ public class Utils {
         return rand.nextLong();
     }
 
-    public static KeyPair generateNewKeyPair (int size) {
+    public static KeyPair generateNewKeyPair(int size) {
 
         try {
             KeyPairGenerator kpgen = KeyPairGenerator.getInstance("RSA");
@@ -33,77 +39,75 @@ public class Utils {
         }
     }
 
-    public static byte[] hashMessage (byte[] messageBytes) {
+    public static byte[] hashMessage(byte[] messageBytes) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
             digest.update(messageBytes);
             return digest.digest();
-        } catch (Exception e){
+        } catch (Exception e) {
             return new byte[0];
         }
     }
 
-    public static byte[] encryptMessage (Key key, byte[] message) {
-        try{
+    public static byte[] encryptMessage(Key key, byte[] message) {
+        try {
             Cipher c = Cipher.getInstance("RSA", "SunJCE");
             c.init(Cipher.ENCRYPT_MODE, key);
             return c.doFinal(message);
-        }catch (Exception e) {
+        } catch (Exception e) {
             return new byte[0];
         }
     }
 
-    static public PublicKey getRelplicaPublicKey(int replicaId) {
+    public static int verifyReplicaResponse (long nonce, ClientResponse clientResponse) {
+        int conflicts = 0;
+
+        for (ReplicaResponse replicaResponse : clientResponse.getResponses()) {
+            if(nonce + 1 != replicaResponse.getNonce()){
+                conflicts++;
+                System.out.println("NONCE CONFLICT");
+            }
+            else if(!clientResponse.getBody().equals(replicaResponse.getBody()) ){
+                conflicts++;
+                System.out.println("AMOUNT CONFLICT");
+            }
+            else if(replicaResponse.getStatusCode() != 200){
+                conflicts++;
+                System.out.println("STATUS CONFLICT");
+            }else{
+                if (!Utils.verifyReplicaResponseSignature(
+                        replicaResponse.getReplicaId(),
+                        Base64.getDecoder().decode(replicaResponse.getSerializedMessage()),
+                        Base64.getDecoder().decode(replicaResponse.getSignature()))
+                ) {
+                    System.out.println("SIGNATURE CONFLICT");
+                    conflicts++;
+                }
+            }
+        }
+        return conflicts;
+    }
+
+    private static boolean verifyReplicaResponseSignature(int replicaId, byte[] serializedMessage, byte[] signature) {
         try {
-        FileReader f = new FileReader("config/keys/publickey"+replicaId);
+            KeyLoader keyLoader = new RSAKeyLoader(replicaId, "config", false, "SHA512withRSA");
+            PublicKey pk = keyLoader.loadPublicKey(replicaId);
 
-        BufferedReader r = new BufferedReader(f);
-        String tmp = "";
-        StringBuilder key = new StringBuilder();
-        while ((tmp = r.readLine()) != null) {
-            key.append(tmp);
-        }
-        f.close();
-        r.close();
+            Signature sig = Signature.getInstance("SHA512withRSA", "SunRsaSign");
+            sig.initVerify(pk);
+            sig.update(serializedMessage);
 
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(key.toString()));
-        return keyFactory.generatePublic(publicKeySpec);
-
+            return sig.verify(signature);
         } catch (Exception e) {
-            System.out.println("KEY NOT FOUND");
+            e.printStackTrace();
+            return false;
         }
-        return null;
     }
 
     static public class InsecureHostnameVerifier implements HostnameVerifier {
         @Override
         public boolean verify(String hostname, SSLSession session) {
             return true;
-        }
-    }
-
-
-    static public byte[] generateHash(byte[] toHash) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-512");
-            digest.update(toHash);
-            return digest.digest();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    static public byte[] decryptRequest(PublicKey pubk, byte[] data) {
-        try {
-            Cipher c = Cipher.getInstance("RSA", "SunJCE");
-            c.init(Cipher.DECRYPT_MODE, pubk);
-            return c.doFinal(data);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
         }
     }
 }

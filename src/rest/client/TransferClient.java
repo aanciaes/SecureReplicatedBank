@@ -51,35 +51,9 @@ public class TransferClient {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
                 System.out.println("Balance after transfer: " + clientResponse.getBody());
 
-                int conflicts = 0;
                 int maxConflicts = (Integer)(clientResponse.getResponses().size() / 2);
+                int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse);
 
-                for (ReplicaResponse replicaResponse : clientResponse.getResponses()) {
-                    //TODO: Check signatures and nonces
-                    if(nonce + 1 != replicaResponse.getNonce()){
-                        conflicts++;
-                        System.out.println("NONCE CONFLICT");
-                    }
-                    else if(!clientResponse.getBody().equals(replicaResponse.getBody()) ){
-                        conflicts++;
-                        System.out.println("AMOUNT CONFLICT");
-                    }
-                    else if(replicaResponse.getStatusCode() != 200){
-                        conflicts++;
-                        System.out.println("STATUS CONFLICT");
-                    }else{
-                        //DIFFERENT ALGORITHMS CHECK IT
-                        KeyLoader keyLoader = new RSAKeyLoader(0, "config", false, "SHA256withRSA");
-                        PublicKey pk = keyLoader.loadPublicKey(replicaResponse.getReplicaId());
-                        Signature sig = Signature.getInstance("SHA512withRSA", "SunRsaSign");
-                        sig.initVerify(pk);
-                        sig.update(Base64.getDecoder().decode(replicaResponse.getSerializedMessage()));
-                        if (!sig.verify(Base64.getDecoder().decode(replicaResponse.getSignature()))) {
-                            System.out.println("SIGNATURE CONFLICT");
-                            conflicts++;
-                        }
-                    }
-                }
                 if(conflicts >= maxConflicts){
                     System.out.println("CONFLICT FOUND!");
                 }
