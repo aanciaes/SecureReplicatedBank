@@ -75,7 +75,7 @@ public class ClientMain {
             }
         }
 
-        GetBalanceTest test = new GetBalanceTest(target, faults);
+        /*GetBalanceTest test = new GetBalanceTest(target, faults);
         GetBalanceTest test2 = new GetBalanceTest(target, faults);
         GetBalanceTest test3 = new GetBalanceTest(target, faults);
         Thread thread1 = new Thread(test);
@@ -115,7 +115,7 @@ public class ClientMain {
         }
 
         System.out.println("Get Balance Average: " + accumulatedBalance / aggregatedBalance.size() + "ms");
-        System.out.println("Get Transfer Average: " + accumulatedBalance / aggregatedTransfer.size() + "ms");
+        System.out.println("Get Transfer Average: " + accumulatedBalance / aggregatedTransfer.size() + "ms");*/
     }
 
     private static CommandLine commandLineParser(String[] args) throws ParseException {
