@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientSumRequest;
 import rest.server.model.ClientTransferRequest;
 import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
@@ -64,24 +65,32 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
             switch (reqType) {
                 case GENERATE_MONEY:
-                    ClientAddMoneyRequest cliAddRequest = (ClientAddMoneyRequest) objIn.readObject();
+                    ClientAddMoneyRequest cliRequestCreate = (ClientAddMoneyRequest) objIn.readObject();
                     long nonce = (Long) objIn.readObject();
 
-                    appRes = addMoney(cliAddRequest, nonce, reqType);
+                    appRes = addMoney(cliRequestCreate, nonce, reqType);
                     objOut.writeObject(appRes);
 
                     break;
 
                 case TRANSFER_MONEY:
 
-                    ClientTransferRequest cliRequest = (ClientTransferRequest) objIn.readObject();
+                    ClientTransferRequest cliRequestTransfer = (ClientTransferRequest) objIn.readObject();
                     long nonceTransfer = (Long) objIn.readObject();
 
-                    appRes = transferMoney(cliRequest, nonceTransfer, reqType);
+                    appRes = transferMoney(cliRequestTransfer, nonceTransfer, reqType);
                     objOut.writeObject(appRes);
 
                     break;
 
+                case HOMO_ADD_SUM:
+                    ClientSumRequest cliRequestSum = (ClientSumRequest) objIn.readObject();
+                    long nonceSum = (Long) objIn.readObject();
+
+                    appRes = homoAddSum(cliRequestSum, nonceSum, reqType);
+                    objOut.writeObject(appRes);
+
+                    break;
                 default:
                     appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L, null);
                     objOut.writeObject(appRes);
@@ -281,6 +290,28 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 logger.warn("No money transferred. Amount must not be negative");
                 return new ReplicaResponse(400, "Amount must not be negative", null, 0L, null);
             }
+        }
+    }
+
+    public ReplicaResponse homoAddSum (ClientSumRequest sumRequest, Long nonce, WalletOperationType operationType) {
+        if (sumRequest.getTypedValue().getType() == DataType.HOMO_ADD) {
+            if (db.containsKey(sumRequest.getUserIdentifier())) {
+                TypedValue storedTv = db.get(sumRequest.getUserIdentifier());
+
+                if (storedTv.getType() != DataType.HOMO_ADD) {
+
+                    BigInteger result = HomoAdd.sum(storedTv.getAmountAsBigInteger(), sumRequest.getTypedValue().getAmountAsBigInteger(), new BigInteger(sumRequest.getNsquare()));
+                    storedTv.setAmountAsBigInteger(result);
+
+                    return new ReplicaResponse(200, "Success", result, nonce + 1, operationType);
+                } else {
+                    return new ReplicaResponse(400, "Account is not of type Homo_Add", null, 0L, null);
+                }
+            } else {
+                return new ReplicaResponse(400, "Account does not exist: " + sumRequest.getUserIdentifier(), null, 0L, null);
+            }
+        } else {
+            return new ReplicaResponse(400, "Sum not supported to data type: " + sumRequest.getTypedValue().getType(), null, 0L, null);
         }
     }
 

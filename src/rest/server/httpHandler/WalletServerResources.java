@@ -4,22 +4,6 @@ import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import rest.client.AdminKeyLoader;
-import rest.server.model.ClientAddMoneyRequest;
-import rest.server.model.ClientResponse;
-import rest.server.model.ClientTransferRequest;
-import rest.server.model.CustomExtractor;
-import rest.server.model.ReplicaResponse;
-import rest.server.model.WalletOperationType;
-import rest.server.replica.ReplicaServer;
-
-import javax.crypto.Cipher;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,6 +23,23 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import javax.crypto.Cipher;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import rest.client.AdminKeyLoader;
+import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientResponse;
+import rest.server.model.ClientSumRequest;
+import rest.server.model.ClientTransferRequest;
+import rest.server.model.CustomExtractor;
+import rest.server.model.ReplicaResponse;
+import rest.server.model.WalletOperationType;
+import rest.server.replica.ReplicaServer;
 
 /**
  * Restful resources of wallet server
@@ -167,7 +168,7 @@ public class WalletServerResources implements WalletServer {
     @Override
     @SuppressWarnings("Duplicates")
     public ClientResponse transferMoney(HttpHeaders headers, ClientTransferRequest cliRequest) {
-        logger.info(String.format("transfering: %f from user: %s to user: %s", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey()));
+        logger.info(String.format("transfering: %s from user: %s to user: %s", cliRequest.getAmount(), cliRequest.getFromPubKey(), cliRequest.getToPubKey()));
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
@@ -199,6 +200,50 @@ public class WalletServerResources implements WalletServer {
                     return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages()));
                 }
 
+            } else {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            logger.error(e.getMessage(), e);
+            e.printStackTrace();
+            throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Override
+    public ClientResponse homoAddSUm(@Context HttpHeaders headers, ClientSumRequest clientSumRequest) {
+        logger.info(String.format("sum - encrypted amount: %s to user: %s", clientSumRequest.getTypedValue().getAmount(), clientSumRequest.getUserIdentifier()));
+
+        try {
+            byte[] hashMessage = generateHash(clientSumRequest.getSerializeMessage().getBytes());
+            PublicKey fromPublicKey = generatePublicKeyFromString(clientSumRequest.getUserIdentifier());
+            byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(clientSumRequest.getSignature()));
+
+            if (decryptedHash == null) {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+
+            if (Arrays.equals(hashMessage, decryptedHash)) {
+
+                Long nonce = getNonceFromHeader(headers);
+                byte[] reply = invokeOp(
+                        true,
+                        WalletOperationType.HOMO_ADD_SUM,
+                        clientSumRequest,
+                        nonce
+                );
+
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
+
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+                if (rs.getStatusCode() != 200) {
+                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                } else {
+                    return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages()));
+                }
             } else {
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
             }

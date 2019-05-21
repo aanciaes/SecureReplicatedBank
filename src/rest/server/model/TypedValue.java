@@ -31,7 +31,13 @@ public class TypedValue implements Serializable {
         return Double.parseDouble(amount);
     }
 
+    @JsonIgnore
     public void setAmountAsDouble(Double amount) {
+        this.amount = amount.toString();
+    }
+
+    @JsonIgnore
+    public void setAmountAsBigInteger(BigInteger amount) {
         this.amount = amount.toString();
     }
 
