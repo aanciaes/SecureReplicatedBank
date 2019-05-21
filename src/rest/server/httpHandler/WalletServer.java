@@ -2,6 +2,7 @@ package rest.server.httpHandler;
 
 import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
+import rest.server.model.ClientSumRequest;
 import rest.server.model.ClientTransferRequest;
 
 import javax.ws.rs.Consumes;
@@ -70,4 +71,10 @@ public interface WalletServer {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     ClientResponse transferMoney(@Context HttpHeaders headers, ClientTransferRequest cliRequest);
+
+    @POST
+    @Path("/sum")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientResponse homoAddSUm (@Context HttpHeaders headers, ClientSumRequest clientSumRequest);
 }
