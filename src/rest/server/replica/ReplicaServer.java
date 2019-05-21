@@ -4,10 +4,6 @@ import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
 import hlib.hj.mlib.HomoAdd;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import rest.server.model.*;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,11 +11,18 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientTransferRequest;
+import rest.server.model.DataType;
+import rest.server.model.ReplicaResponse;
+import rest.server.model.TypedValue;
+import rest.server.model.WalletOperationType;
 
 /**
  * Represents the replica. This is the class that holds all the data of the system, currently saved in memory
@@ -179,6 +182,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
+    @SuppressWarnings("Duplicates")
     private ReplicaResponse walletAddMoney(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
@@ -189,6 +193,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
         if (amount > 0) {
             cliRequest.setAmount(forceError(cliRequest.getTypedValue()));
+
             TypedValue clientTv = db.get(cliRequest.getToPubKey());
             double balance = clientTv.getAmountAsDouble();
             clientTv.setAmount(((Double) (balance + amount)).toString());
@@ -201,16 +206,16 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             logger.warn("No money generated. Amount must not be negative");
             return new ReplicaResponse(400, "Amount must not be negative", null, 0L, null);
         }
-
     }
 
+    @SuppressWarnings("Duplicates")
     private ReplicaResponse homoAddSum(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
             db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.HOMO_ADD));
+
             return new ReplicaResponse(200, "Success", cliRequest.getTypedValue().getAmount(), nonce + 1, operationType);
         } else {
-
             BigInteger amount = cliRequest.getTypedValue().getAmountAsBigInteger();
 
             cliRequest.setAmount(forceError(cliRequest.getTypedValue()));
@@ -222,15 +227,15 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             logger.debug(amount + " generated to user " + cliRequest.getToPubKey());
             return new ReplicaResponse(200, "Success", amount, nonce + 1, operationType);
         }
-
-}
+    }
 
     private ReplicaResponse homoOpeIntCreate(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
             db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.HOMO_OPE_INT));
             return new ReplicaResponse(200, "Success", cliRequest.getTypedValue().getAmount(), nonce + 1, operationType);
-        } else{
+        } else {
+            //Homo Ope Int type cannot add money to an existing account
             return new ReplicaResponse(400, "Operation not supported", null, nonce + 1, operationType);
         }
     }
@@ -244,7 +249,8 @@ public class ReplicaServer extends DefaultSingleRecoverable {
      * @return
      */
     private ReplicaResponse transferMoney(ClientTransferRequest cliRequest, Long nonce, WalletOperationType operationType) {
-        if(cliRequest.getTypedValue().getType() != DataType.WALLET){
+        if (cliRequest.getTypedValue().getType() != DataType.WALLET) {
+            // Transfers are not supported for data types Homo Add and Homo Ope Int
             return new ReplicaResponse(400, "Operation not supported", null, 0L, null);
         }
         if (!db.containsKey(cliRequest.getFromPubKey())) {
@@ -254,11 +260,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             double amount = cliRequest.getTypedValue().getAmountAsDouble();
 
             if (amount > 0) {
-                if(db.get(cliRequest.getToPubKey()).getAmountAsDouble() - amount >= 0){
+                if (db.get(cliRequest.getToPubKey()).getAmountAsDouble() - amount >= 0) {
                     if (!db.containsKey(cliRequest.getToPubKey())) {
                         db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getAmount(), DataType.WALLET));
                         return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1, operationType);
-                    }else {
+                    } else {
                         // Force error
                         cliRequest.setAmount(forceError(cliRequest.getTypedValue()));
                         performAtomicTransfer(cliRequest.getFromPubKey(), cliRequest.getToPubKey(), amount);
@@ -310,7 +316,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
             // 20% of probability of error
             if (result == 0) {
-                tv.setAmount(tv.getAmount()+"2");
+                tv.setAmount(tv.getAmount() + "2");
                 return tv;
             } else {
                 return tv;
