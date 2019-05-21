@@ -167,7 +167,6 @@ public class ReplicaServer extends DefaultSingleRecoverable {
      * @return Replica response containing the new balance of the user
      */
     private ReplicaResponse addMoney(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
-        double amount = 0.0;
         TypedValue requestTv = cliRequest.getTypedValue();
 
         switch (requestTv.getType()) {
@@ -187,12 +186,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
             db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.WALLET));
+
+            return new ReplicaResponse(200, "Success", cliRequest.getTypedValue().getAmount(), nonce + 1, operationType);
         }
 
         double amount = cliRequest.getTypedValue().getAmountAsDouble();
 
         if (amount > 0) {
-            cliRequest.setAmount(forceError(cliRequest.getTypedValue()));
+            cliRequest.setTypedValue(forceError(cliRequest.getTypedValue()));
 
             TypedValue clientTv = db.get(cliRequest.getToPubKey());
             double balance = clientTv.getAmountAsDouble();
@@ -218,7 +219,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         } else {
             BigInteger amount = cliRequest.getTypedValue().getAmountAsBigInteger();
 
-            cliRequest.setAmount(forceError(cliRequest.getTypedValue()));
+            cliRequest.setTypedValue(forceError(cliRequest.getTypedValue()));
             TypedValue clientTv = db.get(cliRequest.getToPubKey());
             BigInteger balance = clientTv.getAmountAsBigInteger();
             clientTv.setAmount((HomoAdd.sum(balance, amount, new BigInteger(cliRequest.getToPubKey()))).toString());

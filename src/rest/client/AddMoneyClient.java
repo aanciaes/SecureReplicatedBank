@@ -17,6 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
+import rest.server.model.DataType;
+import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
 
 /**
@@ -43,7 +45,9 @@ public class AddMoneyClient {
 
             ClientAddMoneyRequest clientRequest = new ClientAddMoneyRequest();
             clientRequest.setToPubKey(toPubkString);
-            clientRequest.setAmount(amount);
+
+            TypedValue clientTv = new TypedValue (amount.toString(), DataType.WALLET);
+            clientRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());

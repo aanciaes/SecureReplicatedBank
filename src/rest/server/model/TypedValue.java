@@ -1,8 +1,10 @@
 package rest.server.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.Serializable;
 import java.math.BigInteger;
 
-public class TypedValue {
+public class TypedValue implements Serializable {
 
     private String amount;
     private DataType type;
@@ -19,10 +21,12 @@ public class TypedValue {
         return amount;
     }
 
+    @JsonIgnore
     public BigInteger getAmountAsBigInteger() {
         return new BigInteger(amount);
     }
 
+    @JsonIgnore
     public double getAmountAsDouble() {
         return Double.parseDouble(amount);
     }

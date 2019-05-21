@@ -5,6 +5,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientTransferRequest;
+import rest.server.model.DataType;
+import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
 
 import javax.ws.rs.client.Entity;
@@ -38,7 +40,9 @@ public class TransferClient {
             ClientTransferRequest clientRequest = new ClientTransferRequest();
             clientRequest.setFromPubKey(fromPubKString);
             clientRequest.setToPubKey(toKey);
-            clientRequest.setAmount(amount);
+
+            TypedValue clientTypedValue = new TypedValue(amount.toString(), DataType.WALLET);
+            clientRequest.setAmount(clientTypedValue);
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());

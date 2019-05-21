@@ -120,7 +120,7 @@ public class WalletServerResources implements WalletServer {
     @Override
     @SuppressWarnings("Duplicates")
     public ClientResponse generateMoney(HttpHeaders headers, ClientAddMoneyRequest cliRequest) {
-        logger.info(String.format("generating: %f for user: %s ---", cliRequest.getAmount(), cliRequest.getToPubKey()));
+        logger.info(String.format("generating: %s for user: %s ---", cliRequest.getTypedValue().getAmount(), cliRequest.getToPubKey()));
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
