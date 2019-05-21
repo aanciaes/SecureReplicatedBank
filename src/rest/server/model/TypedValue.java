@@ -53,6 +53,7 @@ public class TypedValue implements Serializable {
         this.type = type;
     }
 
+    @JsonIgnore
     public long getAmountAsLong() {
         return Long.parseLong(this.amount);
     }
