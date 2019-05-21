@@ -46,4 +46,8 @@ public class TypedValue implements Serializable {
     public void setType(DataType type) {
         this.type = type;
     }
+
+    public long getAmountAsLong() {
+        return Long.parseLong(this.amount);
+    }
 }

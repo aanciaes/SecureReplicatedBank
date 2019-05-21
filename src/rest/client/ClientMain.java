@@ -7,6 +7,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+import rest.server.model.DataType;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -68,7 +69,7 @@ public class ClientMain {
             try {
                 KeyPair kp = Utils.generateNewKeyPair(1024);
                 users.add(kp);
-                AddMoneyClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), 1000.0);
+                AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000.0");
                 nUsers++;
             } catch (Exception e) {
                 e.printStackTrace();
