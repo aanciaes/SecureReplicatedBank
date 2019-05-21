@@ -1,6 +1,7 @@
 package rest.server.model;
 
 import java.io.Serializable;
+import java.lang.reflect.Type;
 
 /**
  * Input class of the transfer money request
@@ -9,17 +10,17 @@ public class ClientTransferRequest implements Serializable {
 
     private String fromPubKey;
     private String toPubKey;
-    private Double amount;
+    private TypedValue tv;
     private Long nonce;
     private String signature;
 
     public ClientTransferRequest() {
     }
 
-    public ClientTransferRequest(String fromPubKey, String toPubKey, Double amount, Long nonce, String signature) {
+    public ClientTransferRequest(String fromPubKey, String toPubKey, TypedValue tv, Long nonce, String signature) {
         this.fromPubKey = fromPubKey;
         this.toPubKey = toPubKey;
-        this.amount = amount;
+        this.tv = tv;
         this.nonce = nonce;
         this.signature = signature;
     }
@@ -32,8 +33,8 @@ public class ClientTransferRequest implements Serializable {
         return toPubKey;
     }
 
-    public Double getAmount() {
-        return amount;
+    public String getAmount() {
+        return tv.getAmount();
     }
 
     public Long getNonce() {
@@ -52,8 +53,8 @@ public class ClientTransferRequest implements Serializable {
         this.toPubKey = toPubKey;
     }
 
-    public void setAmount(Double amount) {
-        this.amount = amount;
+    public void setAmount(TypedValue tv) {
+        this.tv = tv;
     }
 
     public void setNonce(Long nonce) {
@@ -65,6 +66,11 @@ public class ClientTransferRequest implements Serializable {
     }
 
     public String getSerializeMessage() {
-        return fromPubKey + "," + toPubKey + "," + amount + ":" + nonce;
+        return fromPubKey + "," + toPubKey + "," + tv.getAmount() + ":" + nonce;
     }
+
+    public TypedValue getTypedValue() {
+        return tv;
+    }
+
 }

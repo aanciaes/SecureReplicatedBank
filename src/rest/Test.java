@@ -20,7 +20,6 @@ public class Test {
 
             BigInteger int1plus2Enc = HomoAdd.sum(int1enc, int2enc, pk.getNsquare());
             System.out.println(int1plus2Enc);
-
             BigInteger int1plus2 = HomoAdd.decrypt(int1plus2Enc, pk);
             System.out.println(int1plus2);
 

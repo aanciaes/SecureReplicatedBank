@@ -7,26 +7,27 @@ import java.io.Serializable;
  */
 public class ClientAddMoneyRequest implements Serializable {
     private String toPubKey;
-    private Double amount;
+    private TypedValue tv;
     private Long nonce;
     private String signature;
 
     public ClientAddMoneyRequest() {
     }
 
-    public ClientAddMoneyRequest(String toPubKey, Double amount, Long nonce, String signature) {
+    public ClientAddMoneyRequest(String toPubKey, TypedValue tv, Long nonce, String signature) {
         this.toPubKey = toPubKey;
-        this.amount = amount;
+        this.tv = tv;
         this.nonce = nonce;
         this.signature = signature;
+
     }
 
     public String getToPubKey() {
         return toPubKey;
     }
 
-    public Double getAmount() {
-        return amount;
+    public TypedValue getTypedValue() {
+        return tv;
     }
 
     public Long getNonce() {
@@ -41,8 +42,8 @@ public class ClientAddMoneyRequest implements Serializable {
         this.toPubKey = toPubKey;
     }
 
-    public void setAmount(Double amount) {
-        this.amount = amount;
+    public void setAmount(TypedValue tv) {
+        this.tv = tv;
     }
 
     public void setNonce(Long nonce) {
@@ -54,6 +55,6 @@ public class ClientAddMoneyRequest implements Serializable {
     }
 
     public String getSerializeMessage() {
-        return toPubKey + "," + amount + ":" + nonce;
+        return toPubKey + "," + tv.getAmount() + ":" + nonce;
     }
 }
