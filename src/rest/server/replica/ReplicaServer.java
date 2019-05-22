@@ -182,7 +182,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             case WALLET:
                 return walletAddMoney(cliRequest, nonce, operationType);
             case HOMO_ADD:
-                return homoAddSum(cliRequest, nonce, operationType);
+                return homoAddCreate(cliRequest, nonce, operationType);
             case HOMO_OPE_INT:
                 return homoOpeIntCreate(cliRequest, nonce, operationType);
             default:
@@ -219,7 +219,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     }
 
     @SuppressWarnings("Duplicates")
-    private ReplicaResponse homoAddSum(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
+    private ReplicaResponse homoAddCreate(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
             db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.HOMO_ADD));
@@ -298,7 +298,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             if (db.containsKey(sumRequest.getUserIdentifier())) {
                 TypedValue storedTv = db.get(sumRequest.getUserIdentifier());
 
-                if (storedTv.getType() != DataType.HOMO_ADD) {
+                if (storedTv.getType() == DataType.HOMO_ADD) {
 
                     BigInteger result = HomoAdd.sum(storedTv.getAmountAsBigInteger(), sumRequest.getTypedValue().getAmountAsBigInteger(), new BigInteger(sumRequest.getNsquare()));
                     storedTv.setAmountAsBigInteger(result);
