@@ -12,6 +12,7 @@ import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.PaillierKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import rest.server.model.DataType;
 
 /**
  * Client that adds money
@@ -42,7 +43,8 @@ public class AddMoneyClient {
             //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
             SumHomoAddClient.sumMoney(target, faults, kp, "1000", pk);
             GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
-
+            SetBalanceClient.setBalance(target, faults, kp, HelpSerial.toString(pk), "4000", DataType.HOMO_ADD);
+            GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
         } catch (Exception e) {
             e.printStackTrace();
         }

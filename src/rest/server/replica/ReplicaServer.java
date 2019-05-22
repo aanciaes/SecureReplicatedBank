@@ -91,6 +91,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     objOut.writeObject(appRes);
 
                     break;
+                case SET_BALANCE:
+                    ClientAddMoneyRequest cliSetRequest = (ClientAddMoneyRequest) objIn.readObject();
+                    long nonceSet = (Long) objIn.readObject();
+
+                    appRes = setBalance(cliSetRequest, nonceSet, reqType);
+                    objOut.writeObject(appRes);
+
+                    break;
                 default:
                     appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L, null);
                     objOut.writeObject(appRes);
@@ -108,6 +116,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             e.printStackTrace();
         }
         return reply;
+    }
+
+    private ReplicaResponse setBalance(ClientAddMoneyRequest cliSetRequest, long nonce, WalletOperationType operationType) {
+        db.put(cliSetRequest.getToPubKey(), new TypedValue(cliSetRequest.getTypedValue().getAmount(), cliSetRequest.getTypedValue().getType()));
+        return new ReplicaResponse(200, "Success", forceError(db.get(cliSetRequest.getToPubKey())), (nonce + 1), operationType);
     }
 
     @Override

@@ -77,4 +77,10 @@ public interface WalletServer {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     ClientResponse homoAddSum (@Context HttpHeaders headers, ClientSumRequest clientSumRequest);
+
+    @POST
+    @Path("/set")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientResponse setBalance (@Context HttpHeaders headers, ClientAddMoneyRequest clientSetRequest);
 }
