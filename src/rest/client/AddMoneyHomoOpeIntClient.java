@@ -28,10 +28,9 @@ public class AddMoneyHomoOpeIntClient {
      * @param amount               amount to add to the user
      */
     @SuppressWarnings("Duplicates")
-    public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount) {
+    public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount, String homoKey) {
 
         try {
-            String homoKey = "Ola Palerma";
             HomoOpeInt ope = new HomoOpeInt(homoKey);
 
             String toPubkString = Base64.getEncoder().encodeToString(destinationPublicKey.getEncoded());

@@ -41,9 +41,14 @@ public interface WalletServer {
      * @return Client response with the balance of the user with all replica responses
      */
     @GET
-    @Path("/{userIdentifier}")
+    @Path("/get/{userIdentifier}")
     @Produces(MediaType.APPLICATION_JSON)
     ClientResponse getAmount(@Context HttpHeaders headers, @PathParam("userIdentifier") String userIdentifier, @QueryParam("signature") String signature);
+
+    @GET
+    @Path("/getbetween")
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientResponse getBetween(@Context HttpHeaders headers, @QueryParam("lowest") Long lowest, @QueryParam("highest") Long highest);
 
     /**
      * Generates money for a user

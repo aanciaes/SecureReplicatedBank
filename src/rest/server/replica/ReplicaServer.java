@@ -12,6 +12,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -138,9 +140,19 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             switch (reqType) {
                 case GET_BALANCE:
                     String userPublicKey = (String) objIn.readObject();
-                    long nonce = (Long) objIn.readObject();
+                    long nonceGetBalance = (Long) objIn.readObject();
 
-                    appRes = getBalance(userPublicKey, nonce, reqType);
+                    appRes = getBalance(userPublicKey, nonceGetBalance, reqType);
+                    objOut.writeObject(appRes);
+
+                    break;
+
+                case GET_BETWEEN:
+                    long lowest = (long) objIn.readObject();
+                    long highest = (long) objIn.readObject();
+                    long nonceGetBetween = (Long) objIn.readObject();
+
+                    appRes = getBetween(lowest, highest, nonceGetBetween, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -155,7 +167,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             reply = byteOut.toByteArray();
 
         } catch (IOException | ClassNotFoundException e) {
-            logger.error("Ocurred during map operation execution", e);
+            logger.error("Occurred during map operation execution", e);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             e.printStackTrace();
@@ -178,6 +190,20 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         } else {
             return new ReplicaResponse(404, "User does not exist", null, 0L, null);
         }
+    }
+
+    private ReplicaResponse getBetween(Long lowest, Long highest, long nonce, WalletOperationType operationType) {
+        List<String> rst = new ArrayList();
+
+        db.forEach((String key, TypedValue typedValue) -> {
+            if (typedValue.getType() == DataType.HOMO_OPE_INT) {
+                if (typedValue.getAmountAsLong() < highest && typedValue.getAmountAsLong() > lowest) {
+                    rst.add(key);
+                }
+            }
+        });
+
+        return new ReplicaResponse(200, "Success", rst, (nonce + 1), operationType);
     }
 
     /**
@@ -306,7 +332,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    public ReplicaResponse homoAddSum (ClientSumRequest sumRequest, Long nonce, WalletOperationType operationType) {
+    public ReplicaResponse homoAddSum(ClientSumRequest sumRequest, Long nonce, WalletOperationType operationType) {
         if (sumRequest.getTypedValue().getType() == DataType.HOMO_ADD) {
             if (db.containsKey(sumRequest.getUserIdentifier())) {
                 TypedValue storedTv = db.get(sumRequest.getUserIdentifier());

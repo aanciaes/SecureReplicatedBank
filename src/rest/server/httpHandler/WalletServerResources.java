@@ -117,6 +117,39 @@ public class WalletServerResources implements WalletServer {
         }
     }
 
+    @SuppressWarnings("Duplicates")
+    @Override
+    public ClientResponse getBetween(HttpHeaders headers, Long lowest, Long highest) {
+        Long nonce = getNonceFromHeader(headers);
+
+        try {
+            if (lowest != null && highest != null) {
+                byte[] reply = invokeOp(false, WalletOperationType.GET_BETWEEN, lowest, highest, nonce);
+
+                // Reply from the replicas
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
+
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+                if (rs.getStatusCode() != 200) {
+                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                }
+
+                List<ReplicaResponse> replicaResponses = convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages());
+
+                return forceErrorForClient(new ClientResponse(rs.getBody(), replicaResponses));
+            } else {
+                throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            logger.error(e.getMessage(), e);
+            throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     @Override
     @SuppressWarnings("Duplicates")
     public ClientResponse generateMoney(HttpHeaders headers, ClientAddMoneyRequest cliRequest) {

@@ -43,7 +43,7 @@ public class GetBalanceClient {
             byte[] encryptedHash = Utils.encryptMessage(userKeyPair.getPrivate(), hashedMessage);
 
             Response response = target
-                    .path(String.format("/%s", URLEncoder.encode(userKeyString, "utf-8")))
+                    .path(String.format("/get/%s", URLEncoder.encode(userKeyString, "utf-8")))
                     .queryParam("signature", URLEncoder.encode(Base64.getEncoder().encodeToString(encryptedHash), "utf-8"))
                     .request()
                     .header("nonce", nonce)

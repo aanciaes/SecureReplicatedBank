@@ -1,5 +1,6 @@
 package rest.client;
 
+import hlib.hj.mlib.HomoOpeInt;
 import java.net.URI;
 import java.security.KeyPair;
 import javax.ws.rs.client.Client;
@@ -37,14 +38,20 @@ public class AddMoneyClient {
 
             KeyPair kp = Utils.generateNewKeyPair(1024);
             PaillierKey pk = HomoAdd.generateKey();
+            String opeIntKey = "Ola Palerma";
+
             //AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
 
-            AddMoneyHomoAddClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", pk);
-            //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
-            SumHomoAddClient.sumMoney(target, faults, kp, "1000", pk);
-            GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
-            SetBalanceClient.setBalance(target, faults, kp, HelpSerial.toString(pk), "4000", DataType.HOMO_ADD);
-            GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
+            //AddMoneyHomoAddClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", pk);
+            //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "10000", opeIntKey);
+            //SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.HOMO_OPE_INT);
+
+            GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, 10, 14);
+
+            //SumHomoAddClient.sumMoney(target, faults, kp, "1000", pk);
+            //GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
+            //SetBalanceClient.setBalance(target, faults, kp, HelpSerial.toString(pk), "4000", DataType.HOMO_ADD);
+            //GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
         } catch (Exception e) {
             e.printStackTrace();
         }
