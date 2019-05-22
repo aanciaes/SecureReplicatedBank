@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -117,6 +116,39 @@ public class WalletServerResources implements WalletServer {
             throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @SuppressWarnings("Duplicates")
+    @Override
+    public ClientResponse getBetween(HttpHeaders headers, Long lowest, Long highest) {
+        Long nonce = getNonceFromHeader(headers);
+
+        try {
+            if (lowest != null && highest != null) {
+                byte[] reply = invokeOp(false, WalletOperationType.GET_BETWEEN, lowest, highest, nonce);
+
+                // Reply from the replicas
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
+
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+                if (rs.getStatusCode() != 200) {
+                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                }
+
+                List<ReplicaResponse> replicaResponses = convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages());
+
+                return forceErrorForClient(new ClientResponse(rs.getBody(), replicaResponses));
+            } else {
+                throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            logger.error(e.getMessage(), e);
+            throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     @Override
     @SuppressWarnings("Duplicates")
@@ -230,6 +262,49 @@ public class WalletServerResources implements WalletServer {
                         true,
                         WalletOperationType.HOMO_ADD_SUM,
                         clientSumRequest,
+                        nonce
+                );
+
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
+
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+                if (rs.getStatusCode() != 200) {
+                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                } else {
+                    return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages()));
+                }
+            } else {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            logger.error(e.getMessage(), e);
+            e.printStackTrace();
+            throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Override
+    public ClientResponse setBalance(HttpHeaders headers, ClientAddMoneyRequest clientSetRequest) {
+        logger.info(String.format("set - encrypted amount: %s to user: %s", clientSetRequest.getTypedValue().getAmount(), clientSetRequest.getToPubKey()));
+
+        try {
+            byte[] hashMessage = generateHash(clientSetRequest.getSerializeMessage().getBytes());
+            PublicKey fromPublicKey = generatePublicKeyFromString(clientSetRequest.getToPubKey());
+            byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(clientSetRequest.getSignature()));
+
+            if (decryptedHash == null) {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+            if (Arrays.equals(hashMessage, decryptedHash)) {
+
+                Long nonce = getNonceFromHeader(headers);
+                byte[] reply = invokeOp(
+                        true,
+                        WalletOperationType.SET_BALANCE,
+                        clientSetRequest,
                         nonce
                 );
 

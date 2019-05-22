@@ -1,27 +1,25 @@
 package rest.client;
 
-import com.fasterxml.jackson.databind.JsonSerializable;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.HomoOpeInt;
 import hlib.hj.mlib.PaillierKey;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import rest.server.model.*;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.security.KeyPair;
 import java.util.Base64;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import rest.server.model.ClientResponse;
-import rest.server.model.TypedValue;
-import rest.server.model.WalletOperationType;
 
-/**
- * Client that returns the balance of a user
- */
-public class GetBalanceClient {
-
+public class SetBalanceClient {
     private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
 
     /**
@@ -29,34 +27,51 @@ public class GetBalanceClient {
      *
      * @param faults      Number of fault that the client wants to tolerate
      * @param target      WebTarget to the server
-     * @param userKeyPair User public and private key
+     * @param kp User public and private key
      */
     @SuppressWarnings("Duplicates")
-    public static void getBalance(WebTarget target, int faults, KeyPair userKeyPair, String homoKey) {
+    public static void setBalance(WebTarget target, int faults, KeyPair kp, String homoKey, String amount, DataType dataType) {
         try {
-            String userKeyString = Base64.getEncoder().encodeToString(userKeyPair.getPublic().getEncoded());
+            String toPubkString = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
+            switch(dataType){
+                case HOMO_ADD:
+                    PaillierKey paillierKey = (PaillierKey) HelpSerial.fromString(homoKey);
+                    amount = HomoAdd.encrypt(new BigInteger(amount), paillierKey).toString();
+                    break;
+                case HOMO_OPE_INT:
+                    HomoOpeInt ope = new HomoOpeInt(homoKey);
+                    amount = String.valueOf(ope.encrypt(Integer.parseInt(amount)));
+            }
+            ClientAddMoneyRequest clientSetRequest = new ClientAddMoneyRequest();
+            clientSetRequest.setToPubKey(toPubkString);
+
+            TypedValue clientTv = new TypedValue (amount, dataType);
+            clientSetRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
+            clientSetRequest.setNonce(Utils.generateNonce());
+
+            byte[] hashedMessage = Utils.hashMessage(clientSetRequest.getSerializeMessage().getBytes());
+            byte[] encryptedHash = Utils.encryptMessage(kp.getPrivate(), hashedMessage);
+
+            clientSetRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
+
+            Gson gson = new Gson();
+            String json = gson.toJson(clientSetRequest);
             long nonce = Utils.generateNonce();
 
-            byte[] hashedMessage = Utils.hashMessage((userKeyString + nonce).getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(userKeyPair.getPrivate(), hashedMessage);
+            Response response = target.path("/set").request().header("nonce", nonce)
+                    .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
-            Response response = target
-                    .path(String.format("/get/%s", URLEncoder.encode(userKeyString, "utf-8")))
-                    .queryParam("signature", URLEncoder.encode(Base64.getEncoder().encodeToString(encryptedHash), "utf-8"))
-                    .request()
-                    .header("nonce", nonce)
-                    .get();
 
             int status = response.getStatus();
-            logger.info("Get Balance Status: " + status);
+            logger.info("Set Balance Status: " + status);
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
                 logger.info("Current Balance: " + clientResponse.getBody());
 
-                int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.GET_BALANCE);
+                int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.SET_BALANCE);
 
                 if (conflicts > faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");

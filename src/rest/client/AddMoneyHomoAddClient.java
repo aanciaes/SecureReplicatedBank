@@ -30,10 +30,9 @@ public class AddMoneyHomoAddClient {
      * @param amount               amount to add to the user
      */
     @SuppressWarnings("Duplicates")
-    public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount) {
+    public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount, PaillierKey pk) {
 
         try {
-            PaillierKey pk = HomoAdd.generateKey();
             String toPubkString = Base64.getEncoder().encodeToString(destinationPublicKey.getEncoded());//pk.getNsquare().toString();
             amount = HomoAdd.encrypt(new BigInteger(amount), pk).toString();
 
