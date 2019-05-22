@@ -27,9 +27,8 @@ public class SumHomoAddClient {
      * @param amount               amount to add to the user
      */
     @SuppressWarnings("Duplicates")
-    public static void sumMoney(WebTarget target, int faults, KeyPair kp, String amount) {
+    public static void sumMoney(WebTarget target, int faults, KeyPair kp, String amount, PaillierKey pk) {
         try {
-            PaillierKey pk = HomoAdd.generateKey();
             String toPubkString = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
             amount = HomoAdd.encrypt(new BigInteger(amount), pk).toString();
 

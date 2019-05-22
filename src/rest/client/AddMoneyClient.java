@@ -6,6 +6,10 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.UriBuilder;
+
+import hlib.hj.mlib.HelpSerial;
+import hlib.hj.mlib.HomoAdd;
+import hlib.hj.mlib.PaillierKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,12 +35,13 @@ public class AddMoneyClient {
             WebTarget target = client.target(baseURI);
 
             KeyPair kp = Utils.generateNewKeyPair(1024);
-
+            PaillierKey pk = HomoAdd.generateKey();
             //AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
 
-            AddMoneyHomoAddClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
+            AddMoneyHomoAddClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", pk);
             //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
-            SumHomoAddClient.sumMoney(target, faults, kp, "1000");
+            SumHomoAddClient.sumMoney(target, faults, kp, "1000", pk);
+            GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
 
         } catch (Exception e) {
             e.printStackTrace();

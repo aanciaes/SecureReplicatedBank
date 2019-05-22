@@ -72,6 +72,7 @@ public class GetBalanceClient {
                         case HOMO_ADD:
                             PaillierKey paillierKey = (PaillierKey) HelpSerial.fromString(homoKey);
                             logger.info("Balance: " + HomoAdd.decrypt(tv.getAmountAsBigInteger(), paillierKey));
+                            System.out.println("Balance: " + HomoAdd.decrypt(tv.getAmountAsBigInteger(), paillierKey));
                             break;
 
                         case HOMO_OPE_INT:
