@@ -159,12 +159,12 @@ public class ClientMain {
             while (System.currentTimeMillis() - testTime < 1800) {
                 int sender = rand.nextInt((users.size() - 1) + 1);
                 Long timestampInit = System.currentTimeMillis();
-                GetBalanceClient.getBalance(target, faults, users.get(sender));
+                GetBalanceClient.getBalance(target, faults, users.get(sender), null);
                 getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
 
                 sender = rand.nextInt((users.size() - 1) + 1);
                 timestampInit = System.currentTimeMillis();
-                GetBalanceClient.getBalance(target, faults, users.get(sender));
+                GetBalanceClient.getBalance(target, faults, users.get(sender), null);
                 getTransferTimes.add(System.currentTimeMillis() - timestampInit);
 
                 double amount = 1000 * rand.nextDouble();
@@ -182,7 +182,7 @@ public class ClientMain {
                 getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
 
                 timestampInit = System.currentTimeMillis();
-                GetBalanceClient.getBalance(target, faults, users.get(0));
+                GetBalanceClient.getBalance(target, faults, users.get(0), null);
                 getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
 
                 amount = 1000 * rand.nextDouble();

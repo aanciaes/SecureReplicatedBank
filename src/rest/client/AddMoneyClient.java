@@ -1,30 +1,13 @@
 package rest.client;
 
-import com.google.gson.Gson;
-
-import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.Base64;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-
-import hlib.hj.mlib.HomoAdd;
-import hlib.hj.mlib.PaillierKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import rest.server.model.ClientAddMoneyRequest;
-import rest.server.model.ClientResponse;
-import rest.server.model.DataType;
-import rest.server.model.TypedValue;
-import rest.server.model.WalletOperationType;
 
 /**
  * Client that adds money
@@ -50,9 +33,11 @@ public class AddMoneyClient {
             KeyPair kp = Utils.generateNewKeyPair(1024);
 
             //AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
+
             AddMoneyHomoAddClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
             //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
             SumHomoAddClient.sumMoney(target, faults, kp, "1000");
+
         } catch (Exception e) {
             e.printStackTrace();
         }

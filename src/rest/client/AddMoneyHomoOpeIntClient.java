@@ -31,7 +31,9 @@ public class AddMoneyHomoOpeIntClient {
     public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount) {
 
         try {
-            HomoOpeInt ope = new HomoOpeInt("Ola Palerma");
+            String homoKey = "Ola Palerma";
+            HomoOpeInt ope = new HomoOpeInt(homoKey);
+
             String toPubkString = Base64.getEncoder().encodeToString(destinationPublicKey.getEncoded());
             amount = String.valueOf(ope.encrypt(Integer.parseInt(amount)));
 
