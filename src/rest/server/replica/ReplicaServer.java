@@ -3,13 +3,7 @@ package rest.server.replica;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import rest.server.model.ClientAddMoneyRequest;
-import rest.server.model.ClientTransferRequest;
-import rest.server.model.ReplicaResponse;
-import rest.server.model.WalletOperationType;
-
+import hlib.hj.mlib.HomoAdd;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,9 +11,19 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientSumRequest;
+import rest.server.model.ClientTransferRequest;
+import rest.server.model.DataType;
+import rest.server.model.ReplicaResponse;
+import rest.server.model.TypedValue;
+import rest.server.model.WalletOperationType;
 
 /**
  * Represents the replica. This is the class that holds all the data of the system, currently saved in memory
@@ -28,7 +32,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
     private static Logger logger = LogManager.getLogger(ReplicaServer.class.getName());
 
-    private Map<String, Double> db = new ConcurrentHashMap<>();
+    private Map<String, TypedValue> db = new ConcurrentHashMap<>();
     private boolean unpredictable;
 
     public ReplicaServer(int id, boolean unpredictable) {
@@ -61,24 +65,32 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
             switch (reqType) {
                 case GENERATE_MONEY:
-                    ClientAddMoneyRequest cliAddRequest = (ClientAddMoneyRequest) objIn.readObject();
+                    ClientAddMoneyRequest cliRequestCreate = (ClientAddMoneyRequest) objIn.readObject();
                     long nonce = (Long) objIn.readObject();
 
-                    appRes = addMoney(cliAddRequest, nonce, reqType);
+                    appRes = addMoney(cliRequestCreate, nonce, reqType);
                     objOut.writeObject(appRes);
 
                     break;
 
                 case TRANSFER_MONEY:
 
-                    ClientTransferRequest cliRequest = (ClientTransferRequest) objIn.readObject();
+                    ClientTransferRequest cliRequestTransfer = (ClientTransferRequest) objIn.readObject();
                     long nonceTransfer = (Long) objIn.readObject();
 
-                    appRes = transferMoney(cliRequest, nonceTransfer, reqType);
+                    appRes = transferMoney(cliRequestTransfer, nonceTransfer, reqType);
                     objOut.writeObject(appRes);
 
                     break;
 
+                case HOMO_ADD_SUM:
+                    ClientSumRequest cliRequestSum = (ClientSumRequest) objIn.readObject();
+                    long nonceSum = (Long) objIn.readObject();
+
+                    appRes = homoAddSum(cliRequestSum, nonceSum, reqType);
+                    objOut.writeObject(appRes);
+
+                    break;
                 default:
                     appRes = new ReplicaResponse(400, "Operation Unknown", null, 0L, null);
                     objOut.writeObject(appRes);
@@ -164,20 +176,77 @@ public class ReplicaServer extends DefaultSingleRecoverable {
      * @return Replica response containing the new balance of the user
      */
     private ReplicaResponse addMoney(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
+        TypedValue requestTv = cliRequest.getTypedValue();
 
+        switch (requestTv.getType()) {
+            case WALLET:
+                return walletAddMoney(cliRequest, nonce, operationType);
+            case HOMO_ADD:
+                return homoAddSum(cliRequest, nonce, operationType);
+            case HOMO_OPE_INT:
+                return homoOpeIntCreate(cliRequest, nonce, operationType);
+            default:
+                return new ReplicaResponse(400, "Invalid DataType: " + requestTv.getType(), null, 0L, null);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    private ReplicaResponse walletAddMoney(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
-            db.put(cliRequest.getToPubKey(), 0.0);
-        }
-        if (cliRequest.getAmount() > 0) {
-            cliRequest.setAmount(forceError(cliRequest.getAmount()));
-            db.put(cliRequest.getToPubKey(), db.get(cliRequest.getToPubKey()) + cliRequest.getAmount());
+            db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.WALLET));
 
-            logger.debug(cliRequest.getAmount() + " generated to user " + cliRequest.getToPubKey());
-            return new ReplicaResponse(200, "Success", cliRequest.getAmount(), nonce + 1, operationType);
+            return new ReplicaResponse(200, "Success", cliRequest.getTypedValue().getAmount(), nonce + 1, operationType);
+        }
+
+        double amount = cliRequest.getTypedValue().getAmountAsDouble();
+
+        if (amount > 0) {
+            cliRequest.setTypedValue(forceError(cliRequest.getTypedValue()));
+
+            TypedValue clientTv = db.get(cliRequest.getToPubKey());
+            double balance = clientTv.getAmountAsDouble();
+            clientTv.setAmount(((Double) (balance + amount)).toString());
+
+            db.put(cliRequest.getToPubKey(), clientTv);
+
+            logger.debug(amount + " generated to user " + cliRequest.getToPubKey());
+            return new ReplicaResponse(200, "Success", amount, nonce + 1, operationType);
         } else {
             logger.warn("No money generated. Amount must not be negative");
             return new ReplicaResponse(400, "Amount must not be negative", null, 0L, null);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    private ReplicaResponse homoAddSum(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
+        // Creates new destination user, if not exists
+        if (!db.containsKey(cliRequest.getToPubKey())) {
+            db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.HOMO_ADD));
+
+            return new ReplicaResponse(200, "Success", cliRequest.getTypedValue().getAmount(), nonce + 1, operationType);
+        } else {
+            BigInteger amount = cliRequest.getTypedValue().getAmountAsBigInteger();
+
+            cliRequest.setTypedValue(forceError(cliRequest.getTypedValue()));
+            TypedValue clientTv = db.get(cliRequest.getToPubKey());
+            BigInteger balance = clientTv.getAmountAsBigInteger();
+            clientTv.setAmount((HomoAdd.sum(balance, amount, new BigInteger(cliRequest.getToPubKey()))).toString());
+
+            db.put(cliRequest.getToPubKey(), clientTv);
+            logger.debug(amount + " generated to user " + cliRequest.getToPubKey());
+            return new ReplicaResponse(200, "Success", amount, nonce + 1, operationType);
+        }
+    }
+
+    private ReplicaResponse homoOpeIntCreate(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
+        // Creates new destination user, if not exists
+        if (!db.containsKey(cliRequest.getToPubKey())) {
+            db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.HOMO_OPE_INT));
+            return new ReplicaResponse(200, "Success", cliRequest.getTypedValue().getAmount(), nonce + 1, operationType);
+        } else {
+            //Homo Ope Int type cannot add money to an existing account
+            return new ReplicaResponse(400, "Operation not supported", null, nonce + 1, operationType);
         }
     }
 
@@ -190,26 +259,29 @@ public class ReplicaServer extends DefaultSingleRecoverable {
      * @return
      */
     private ReplicaResponse transferMoney(ClientTransferRequest cliRequest, Long nonce, WalletOperationType operationType) {
-
+        if (cliRequest.getTypedValue().getType() != DataType.WALLET) {
+            // Transfers are not supported for data types Homo Add and Homo Ope Int
+            return new ReplicaResponse(400, "Operation not supported", null, 0L, null);
+        }
         if (!db.containsKey(cliRequest.getFromPubKey())) {
             logger.warn("No money transferred. User does not exist");
             return new ReplicaResponse(404, "User does not exist", null, 0L, null);
         } else {
-            if (cliRequest.getAmount() > 0) {
-                if (!db.containsKey(cliRequest.getToPubKey())) {
-                    db.put(cliRequest.getToPubKey(), 0.0);
-                }
+            double amount = cliRequest.getTypedValue().getAmountAsDouble();
 
-                Double fromBalance = db.get(cliRequest.getFromPubKey());
+            if (amount > 0) {
+                if (db.get(cliRequest.getToPubKey()).getAmountAsDouble() - amount >= 0) {
+                    if (!db.containsKey(cliRequest.getToPubKey())) {
+                        db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getAmount(), DataType.WALLET));
+                        return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1, operationType);
+                    } else {
+                        // Force error
+                        cliRequest.setAmount(forceError(cliRequest.getTypedValue()));
+                        performAtomicTransfer(cliRequest.getFromPubKey(), cliRequest.getToPubKey(), amount);
 
-                if (fromBalance - cliRequest.getAmount() >= 0) {
-
-                    // Force error
-                    cliRequest.setAmount(forceError(cliRequest.getAmount()));
-                    performAtomicTransfer(cliRequest.getFromPubKey(), cliRequest.getToPubKey(), cliRequest.getAmount());
-
-                    logger.debug("Balance after transfer " + db.get(cliRequest.getFromPubKey()));
-                    return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1, operationType);
+                        logger.debug("Balance after transfer " + db.get(cliRequest.getFromPubKey()));
+                        return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1, operationType);
+                    }
                 } else {
                     logger.warn("No money transferred. No money available in account");
                     return new ReplicaResponse(400, "No money available in account", null, 0L, null);
@@ -221,8 +293,30 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
+    public ReplicaResponse homoAddSum (ClientSumRequest sumRequest, Long nonce, WalletOperationType operationType) {
+        if (sumRequest.getTypedValue().getType() == DataType.HOMO_ADD) {
+            if (db.containsKey(sumRequest.getUserIdentifier())) {
+                TypedValue storedTv = db.get(sumRequest.getUserIdentifier());
+
+                if (storedTv.getType() != DataType.HOMO_ADD) {
+
+                    BigInteger result = HomoAdd.sum(storedTv.getAmountAsBigInteger(), sumRequest.getTypedValue().getAmountAsBigInteger(), new BigInteger(sumRequest.getNsquare()));
+                    storedTv.setAmountAsBigInteger(result);
+
+                    return new ReplicaResponse(200, "Success", result, nonce + 1, operationType);
+                } else {
+                    return new ReplicaResponse(400, "Account is not of type Homo_Add", null, 0L, null);
+                }
+            } else {
+                return new ReplicaResponse(400, "Account does not exist: " + sumRequest.getUserIdentifier(), null, 0L, null);
+            }
+        } else {
+            return new ReplicaResponse(400, "Sum not supported to data type: " + sumRequest.getTypedValue().getType(), null, 0L, null);
+        }
+    }
+
     // For debug purposes only. Return all users of the current server directly
-    public Map<String, Double> getAllNoConsensus() {
+    public Map<String, TypedValue> getAllNoConsensus() {
         return db;
     }
 
@@ -234,20 +328,18 @@ public class ReplicaServer extends DefaultSingleRecoverable {
      * @param amount Amount to transfer
      */
     private synchronized void performAtomicTransfer(String from, String to, Double amount) {
-        Double fromBalance = db.get(from);
-        Double toBalance = db.get(to);
-
-        db.put(from, fromBalance - amount);
-        db.put(to, toBalance + amount);
+        db.get(from).setAmountAsDouble(db.get(from).getAmountAsDouble() - amount);
+        db.get(to).setAmountAsDouble(db.get(from).getAmountAsDouble() + amount);
     }
 
     /**
      * Forces an error of an amount if in unpredictable mode.
      *
-     * @param amount Amount to be changed or not depending on unpredictable mode and probability
+     * @param tv Amount to be changed or not depending on unpredictable mode and probability
      * @return Wrong amount or right amount depending on unpredictable mode and probability
      */
-    private double forceError(double amount) {
+    private TypedValue forceError(TypedValue tv) {
+
         if (unpredictable) {
             Random r = new Random();
             int low = 0;
@@ -256,18 +348,13 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
             // 20% of probability of error
             if (result == 0) {
-                Double lowEnd = amount + 1.0;
-                Double highEnd = amount + 10.0;
-
-                double wrongValue = r.nextInt((highEnd.intValue() - lowEnd.intValue())) + lowEnd;
-
-                logger.debug("Generating wrong value: " + wrongValue);
-                return wrongValue;
+                tv.setAmount(tv.getAmount() + "2");
+                return tv;
             } else {
-                return amount;
+                return tv;
             }
         } else {
-            return amount;
+            return tv;
         }
     }
 }

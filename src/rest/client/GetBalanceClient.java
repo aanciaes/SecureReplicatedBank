@@ -1,15 +1,21 @@
 package rest.client;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import rest.server.model.ClientResponse;
-import rest.server.model.WalletOperationType;
-
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
+import com.fasterxml.jackson.databind.JsonSerializable;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hlib.hj.mlib.HelpSerial;
+import hlib.hj.mlib.HomoAdd;
+import hlib.hj.mlib.HomoOpeInt;
+import hlib.hj.mlib.PaillierKey;
 import java.net.URLEncoder;
 import java.security.KeyPair;
 import java.util.Base64;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import rest.server.model.ClientResponse;
+import rest.server.model.TypedValue;
+import rest.server.model.WalletOperationType;
 
 /**
  * Client that returns the balance of a user
@@ -26,7 +32,7 @@ public class GetBalanceClient {
      * @param userKeyPair User public and private key
      */
     @SuppressWarnings("Duplicates")
-    public static void getBalance(WebTarget target, int faults, KeyPair userKeyPair) {
+    public static void getBalance(WebTarget target, int faults, KeyPair userKeyPair, String homoKey) {
         try {
             String userKeyString = Base64.getEncoder().encodeToString(userKeyPair.getPublic().getEncoded());
 
@@ -54,6 +60,30 @@ public class GetBalanceClient {
 
                 if (conflicts > faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
+                } else {
+                    //decrypt response if needed
+                    TypedValue tv = new ObjectMapper().convertValue(clientResponse.getBody(), TypedValue.class);
+
+                    switch (tv.getType()) {
+                        case WALLET:
+                            logger.info("Balance: " + tv.getAmountAsDouble());
+                            break;
+
+                        case HOMO_ADD:
+                            PaillierKey paillierKey = (PaillierKey) HelpSerial.fromString(homoKey);
+                            logger.info("Balance: " + HomoAdd.decrypt(tv.getAmountAsBigInteger(), paillierKey));
+                            break;
+
+                        case HOMO_OPE_INT:
+                            HomoOpeInt ope = new HomoOpeInt(homoKey);
+                            logger.info("Balance: " + ope.decrypt(tv.getAmountAsLong()));
+                            System.out.println("Balance: " + ope.decrypt(tv.getAmountAsLong()));
+                            break;
+
+                        default:
+                            logger.error("Received wrong data type");
+                            break;
+                    }
                 }
             } else {
                 logger.info(response.getStatusInfo().getReasonPhrase());

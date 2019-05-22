@@ -7,6 +7,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+import rest.server.model.DataType;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -68,14 +69,14 @@ public class ClientMain {
             try {
                 KeyPair kp = Utils.generateNewKeyPair(1024);
                 users.add(kp);
-                AddMoneyClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), 1000.0);
+                AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000.0");
                 nUsers++;
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        GetBalanceTest test = new GetBalanceTest(target, faults);
+        /*GetBalanceTest test = new GetBalanceTest(target, faults);
         GetBalanceTest test2 = new GetBalanceTest(target, faults);
         GetBalanceTest test3 = new GetBalanceTest(target, faults);
         Thread thread1 = new Thread(test);
@@ -115,7 +116,7 @@ public class ClientMain {
         }
 
         System.out.println("Get Balance Average: " + accumulatedBalance / aggregatedBalance.size() + "ms");
-        System.out.println("Get Transfer Average: " + accumulatedBalance / aggregatedTransfer.size() + "ms");
+        System.out.println("Get Transfer Average: " + accumulatedBalance / aggregatedTransfer.size() + "ms");*/
     }
 
     private static CommandLine commandLineParser(String[] args) throws ParseException {
@@ -158,12 +159,12 @@ public class ClientMain {
             while (System.currentTimeMillis() - testTime < 1800) {
                 int sender = rand.nextInt((users.size() - 1) + 1);
                 Long timestampInit = System.currentTimeMillis();
-                GetBalanceClient.getBalance(target, faults, users.get(sender));
+                GetBalanceClient.getBalance(target, faults, users.get(sender), null);
                 getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
 
                 sender = rand.nextInt((users.size() - 1) + 1);
                 timestampInit = System.currentTimeMillis();
-                GetBalanceClient.getBalance(target, faults, users.get(sender));
+                GetBalanceClient.getBalance(target, faults, users.get(sender), null);
                 getTransferTimes.add(System.currentTimeMillis() - timestampInit);
 
                 double amount = 1000 * rand.nextDouble();
@@ -181,7 +182,7 @@ public class ClientMain {
                 getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
 
                 timestampInit = System.currentTimeMillis();
-                GetBalanceClient.getBalance(target, faults, users.get(0));
+                GetBalanceClient.getBalance(target, faults, users.get(0), null);
                 getBalanceTimes.add(System.currentTimeMillis() - timestampInit);
 
                 amount = 1000 * rand.nextDouble();

@@ -7,16 +7,16 @@ import java.io.Serializable;
  */
 public class ClientAddMoneyRequest implements Serializable {
     private String toPubKey;
-    private Double amount;
+    private TypedValue typedValue;
     private Long nonce;
     private String signature;
 
     public ClientAddMoneyRequest() {
     }
 
-    public ClientAddMoneyRequest(String toPubKey, Double amount, Long nonce, String signature) {
+    public ClientAddMoneyRequest(String toPubKey, TypedValue typedValue, Long nonce, String signature) {
         this.toPubKey = toPubKey;
-        this.amount = amount;
+        this.typedValue = typedValue;
         this.nonce = nonce;
         this.signature = signature;
     }
@@ -25,28 +25,28 @@ public class ClientAddMoneyRequest implements Serializable {
         return toPubKey;
     }
 
-    public Double getAmount() {
-        return amount;
+    public void setToPubKey(String toPubKey) {
+        this.toPubKey = toPubKey;
+    }
+
+    public TypedValue getTypedValue() {
+        return typedValue;
+    }
+
+    public void setTypedValue(TypedValue typedValue) {
+        this.typedValue = typedValue;
     }
 
     public Long getNonce() {
         return nonce;
     }
 
-    public String getSignature() {
-        return signature;
-    }
-
-    public void setToPubKey(String toPubKey) {
-        this.toPubKey = toPubKey;
-    }
-
-    public void setAmount(Double amount) {
-        this.amount = amount;
-    }
-
     public void setNonce(Long nonce) {
         this.nonce = nonce;
+    }
+
+    public String getSignature() {
+        return signature;
     }
 
     public void setSignature(String signature) {
@@ -54,6 +54,6 @@ public class ClientAddMoneyRequest implements Serializable {
     }
 
     public String getSerializeMessage() {
-        return toPubKey + "," + amount + ":" + nonce;
+        return toPubKey + "," + typedValue.getAmount() + ":" + nonce;
     }
 }
