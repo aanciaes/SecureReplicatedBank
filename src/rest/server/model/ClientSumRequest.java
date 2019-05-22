@@ -2,7 +2,9 @@ package rest.server.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class ClientSumRequest {
+import java.io.Serializable;
+
+public class ClientSumRequest implements Serializable {
 
     private String userIdentifier;
     private TypedValue typedValue;

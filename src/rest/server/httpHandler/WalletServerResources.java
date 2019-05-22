@@ -212,7 +212,7 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse homoAddSUm(@Context HttpHeaders headers, ClientSumRequest clientSumRequest) {
+    public ClientResponse homoAddSum(HttpHeaders headers, ClientSumRequest clientSumRequest) {
         logger.info(String.format("sum - encrypted amount: %s to user: %s", clientSumRequest.getTypedValue().getAmount(), clientSumRequest.getUserIdentifier()));
 
         try {
@@ -223,7 +223,6 @@ public class WalletServerResources implements WalletServer {
             if (decryptedHash == null) {
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
-
             if (Arrays.equals(hashMessage, decryptedHash)) {
 
                 Long nonce = getNonceFromHeader(headers);
