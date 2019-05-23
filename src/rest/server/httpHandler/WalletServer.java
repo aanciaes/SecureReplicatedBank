@@ -48,7 +48,7 @@ public interface WalletServer {
     @GET
     @Path("/getbetween")
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse getBetween(@Context HttpHeaders headers, @QueryParam("lowest") Long lowest, @QueryParam("highest") Long highest);
+    ClientResponse getBetween(@Context HttpHeaders headers, @QueryParam("key_prf") String keyPrefix, @QueryParam("lowest") Long lowest, @QueryParam("highest") Long highest);
 
     /**
      * Generates money for a user

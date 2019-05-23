@@ -43,10 +43,10 @@ public class AddMoneyClient {
             //AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
 
             //AddMoneyHomoAddClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", pk);
-            //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "10000", opeIntKey);
+            //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", opeIntKey);
             //SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.HOMO_OPE_INT);
 
-            GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, 10, 14);
+            GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, 980, 1000, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQK");
 
             //SumHomoAddClient.sumMoney(target, faults, kp, "1000", pk);
             //GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
