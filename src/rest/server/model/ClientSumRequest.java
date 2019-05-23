@@ -66,6 +66,6 @@ public class ClientSumRequest implements Serializable {
 
     @JsonIgnore
     public String getSerializeMessage() {
-        return userIdentifier + "," + typedValue.getAmount() + ":" + nonce;
+        return userIdentifier + "," + typedValue.getAmount() + "," + nsquare + ":" + nonce;
     }
 }

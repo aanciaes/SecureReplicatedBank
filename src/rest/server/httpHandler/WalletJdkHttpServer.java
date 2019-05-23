@@ -22,6 +22,9 @@ public class WalletJdkHttpServer {
     private static Options cmdOptions = new Options();;
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("javax.net.ssl.keyStore", "server.jks");
+        System.setProperty("javax.net.ssl.keyStorePassword", "qwerty");
+
         int port = 8080;
         int replicaId = 0;
         boolean unpredictable = false;

@@ -1,10 +1,7 @@
 package rest.serverController.server;
 
-import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
-import rest.server.model.ClientSumRequest;
-import rest.server.model.ClientTransferRequest;
-import rest.serverController.client.AdminServerRequest;
+import rest.serverController.model.AdminServerRequest;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -14,7 +11,7 @@ import javax.ws.rs.core.MediaType;
 /**
  * Wallet Server API
  */
-@Path("/manage")
+@Path("/manager")
 public interface ManagerServer {
 
     @POST
