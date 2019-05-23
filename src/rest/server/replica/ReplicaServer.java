@@ -197,7 +197,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
         db.forEach((String key, TypedValue typedValue) -> {
             if (typedValue.getType() == DataType.HOMO_OPE_INT) {
-                if (typedValue.getAmountAsLong() < highest && typedValue.getAmountAsLong() > lowest) {
+                if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
                     rst.add(key);
                 }
             }
