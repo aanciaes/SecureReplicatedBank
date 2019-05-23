@@ -150,9 +150,16 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 case GET_BETWEEN:
                     long lowest = (long) objIn.readObject();
                     long highest = (long) objIn.readObject();
+                    boolean hasKeyPrefix = (boolean) objIn.readObject();
+                    String keyPrefix = null;
+
+                    if (hasKeyPrefix) {
+                        keyPrefix = (String) objIn.readObject();
+                    }
+
                     long nonceGetBetween = (Long) objIn.readObject();
 
-                    appRes = getBetween(lowest, highest, nonceGetBetween, reqType);
+                    appRes = getBetween(keyPrefix, lowest, highest, nonceGetBetween, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -192,13 +199,21 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private ReplicaResponse getBetween(Long lowest, Long highest, long nonce, WalletOperationType operationType) {
+    private ReplicaResponse getBetween(String keyPrefix, Long lowest, Long highest, long nonce, WalletOperationType operationType) {
         List<String> rst = new ArrayList();
 
         db.forEach((String key, TypedValue typedValue) -> {
-            if (typedValue.getType() == DataType.HOMO_OPE_INT) {
-                if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
-                    rst.add(key);
+            if (keyPrefix != null) {
+                if (typedValue.getType() == DataType.HOMO_OPE_INT && key.startsWith(keyPrefix)) {
+                    if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
+                        rst.add(key);
+                    }
+                }
+            } else {
+                if (typedValue.getType() == DataType.HOMO_OPE_INT) {
+                    if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
+                        rst.add(key);
+                    }
                 }
             }
         });

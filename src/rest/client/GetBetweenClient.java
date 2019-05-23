@@ -14,7 +14,7 @@ public class GetBetweenClient {
 
     private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
 
-    public static void getBalanceBetween(WebTarget target, int faults, String opeKey, int lowest, int highest) {
+    public static void getBalanceBetween(WebTarget target, int faults, String opeKey, int lowest, int highest, String keyPrefix) {
         try {
             // Nonce to randomise message encryption
             long nonce = Utils.generateNonce();
@@ -27,6 +27,7 @@ public class GetBetweenClient {
                     .path("/getbetween")
                     .queryParam("lowest", lowestEnc)
                     .queryParam("highest", highestEnc)
+                    .queryParam("key_prf", keyPrefix)
                     .request()
                     .header("nonce", nonce)
                     .get();
