@@ -8,7 +8,7 @@ public enum WalletOperationType {
     GENERATE_MONEY,
     TRANSFER_MONEY,
     GET_BALANCE,
-    HOMO_ADD_SUM,
+    SUM,
     SET_BALANCE,
     GET_BETWEEN
 }

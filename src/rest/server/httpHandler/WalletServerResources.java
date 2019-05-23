@@ -249,8 +249,8 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse homoAddSum(HttpHeaders headers, ClientSumRequest clientSumRequest) {
-        logger.info(String.format("sum - encrypted amount: %s to user: %s", clientSumRequest.getTypedValue().getAmount(), clientSumRequest.getUserIdentifier()));
+    public ClientResponse sum(HttpHeaders headers, ClientSumRequest clientSumRequest) {
+        logger.info(String.format("sum - amount: %s to user: %s", clientSumRequest.getTypedValue().getAmount(), clientSumRequest.getUserIdentifier()));
 
         try {
             byte[] hashMessage = generateHash(clientSumRequest.getSerializeMessage().getBytes());
@@ -265,7 +265,7 @@ public class WalletServerResources implements WalletServer {
                 Long nonce = getNonceFromHeader(headers);
                 byte[] reply = invokeOp(
                         true,
-                        WalletOperationType.HOMO_ADD_SUM,
+                        WalletOperationType.SUM,
                         clientSumRequest,
                         nonce
                 );
