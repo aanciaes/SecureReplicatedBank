@@ -35,8 +35,8 @@ import javax.ws.rs.core.*;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import rest.client.AdminKeyLoader;
 import rest.client.Utils;
+import rest.client.AdminSgxKeyLoader;
 import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientSumRequest;
@@ -169,7 +169,7 @@ public class WalletServerResources implements WalletServer {
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
-            PublicKey fromPublicKey = AdminKeyLoader.loadPublicKey(); // Only admin user can perform this operation
+            PublicKey fromPublicKey = AdminSgxKeyLoader.loadPublicKey("adminPublicKey"); // Only admin user can perform this operation
             byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
 
             // Could not decrypt hash from message

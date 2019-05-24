@@ -1,6 +1,5 @@
 package rest.client;
 
-import hlib.hj.mlib.HomoOpeInt;
 import java.net.URI;
 import java.security.KeyPair;
 import javax.ws.rs.client.Client;
@@ -8,7 +7,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.UriBuilder;
 
-import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.PaillierKey;
 import org.apache.logging.log4j.LogManager;
@@ -40,7 +38,7 @@ public class AddMoneyClient {
             PaillierKey pk = HomoAdd.generateKey();
             String opeIntKey = "Ola Palerma";
 
-            AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "3000");
+            AddMoneyWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "3000");
 
             //AddMoneyHomoAddClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", pk);
             //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", opeIntKey);
