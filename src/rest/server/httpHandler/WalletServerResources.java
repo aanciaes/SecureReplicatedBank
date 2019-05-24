@@ -11,6 +11,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.net.URI;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -25,12 +26,17 @@ import java.util.List;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.*;
+
+import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.client.AdminKeyLoader;
+import rest.client.Utils;
 import rest.server.model.ClientAddMoneyRequest;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientSumRequest;
@@ -174,6 +180,8 @@ public class WalletServerResources implements WalletServer {
             if (!Arrays.equals(hashMessage, decryptedHash)) {
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
+
+            sgxClientCreate(cliRequest);
 
             Long nonce = getNonceFromHeader(headers);
             byte[] reply = invokeOp(
@@ -533,5 +541,28 @@ public class WalletServerResources implements WalletServer {
         int high = 4;
 
         return r.nextInt(high - low) + low;
+    }
+
+    private void sgxClientCreate(ClientAddMoneyRequest cliRequest) {
+
+        if(cliRequest.getEncryptedKey() == null){
+            return;
+        }
+
+        Client client = ClientBuilder.newBuilder()
+                .hostnameVerifier(new Utils.InsecureHostnameVerifier())
+                .build();
+
+        URI baseURI = UriBuilder.fromUri("https://0.0.0.0:6699/sgx/").build();
+        WebTarget target = client.target(baseURI);
+        Gson gson = new Gson();
+        String json = gson.toJson(cliRequest);
+        long nonce = Utils.generateNonce();
+        Response response = target.path("/create").request().header("nonce", cliRequest.getNonce())
+                .post(Entity.entity(json, MediaType.APPLICATION_JSON));
+
+        int status = response.getStatus();
+        logger.info("Insert client in sgx: " + status);
+
     }
 }

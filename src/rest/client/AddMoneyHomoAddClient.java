@@ -48,6 +48,9 @@ public class AddMoneyHomoAddClient {
             byte[] hashedMessage = Utils.hashMessage(clientRequest.getSerializeMessage().getBytes());
             byte[] encryptedHash = Utils.encryptMessage(adminPrivateKey, hashedMessage);
 
+            byte[] encyptedPallietKey = Utils.encryptMessage(destinationPublicKey, pk.toString().getBytes());
+
+            clientRequest.setEncryptedKey(Base64.getEncoder().encodeToString(encyptedPallietKey));
             clientRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 
             Gson gson = new Gson();
