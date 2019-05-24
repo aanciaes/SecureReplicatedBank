@@ -36,6 +36,7 @@ import rest.server.model.ClientResponse;
 import rest.server.model.ClientSumRequest;
 import rest.server.model.ClientTransferRequest;
 import rest.server.model.CustomExtractor;
+import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
@@ -119,16 +120,16 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse getBetween(HttpHeaders headers, String keyPrefix, Long lowest, Long highest) {
+    public ClientResponse getBetween(HttpHeaders headers, DataType dataType, String keyPrefix, Long lowest, Long highest) {
         Long nonce = getNonceFromHeader(headers);
 
         try {
             if (lowest != null && highest != null) {
                 byte[] reply;
                 if (keyPrefix != null) {
-                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, lowest, highest, true, keyPrefix, nonce);
+                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
                 } else {
-                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, lowest, highest, false, nonce);
+                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, nonce);
                 }
 
                 // Reply from the replicas

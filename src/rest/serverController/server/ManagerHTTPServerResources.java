@@ -36,6 +36,8 @@ public class ManagerHTTPServerResources implements ManagerServer {
             return;
         }
         try {
+            //java -cp projectJar/lab1.jar rest.server.httpHandler.WalletJdkHttpServer -id 0 -p 8080
+
             File file = new File("out/artifacts/SecureReplicatedBank_jar/SecureReplicatedBank.jar");
             String path = file.getPath();
             URL[] classLoaderUrls = new URL[]{new URL("file://" + path)};

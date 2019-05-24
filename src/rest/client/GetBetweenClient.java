@@ -8,25 +8,34 @@ import javax.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
+import rest.server.model.DataType;
 import rest.server.model.WalletOperationType;
 
 public class GetBetweenClient {
 
     private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
 
-    public static void getBalanceBetween(WebTarget target, int faults, String opeKey, int lowest, int highest, String keyPrefix) {
+    public static void getBalanceBetween(WebTarget target, int faults, String opeKey, DataType dataType, Integer lowest, Integer highest, String keyPrefix) {
         try {
             // Nonce to randomise message encryption
             long nonce = Utils.generateNonce();
 
-            HomoOpeInt ope = new HomoOpeInt (opeKey);
-            Long lowestEnc = ope.encrypt(lowest);
-            Long highestEnc = ope.encrypt(highest);
+            long requestLowest;
+            Long requestHighest;
+            if (dataType == DataType.HOMO_OPE_INT) {
+                HomoOpeInt ope = new HomoOpeInt(opeKey);
+                requestLowest = ope.encrypt(lowest);
+                requestHighest = ope.encrypt(highest);
+            } else {
+                requestLowest = lowest.longValue();
+                requestHighest = highest.longValue();
+            }
 
             Response response = target
                     .path("/getbetween")
-                    .queryParam("lowest", lowestEnc)
-                    .queryParam("highest", highestEnc)
+                    .queryParam("data_type", dataType)
+                    .queryParam("lowest", requestLowest)
+                    .queryParam("highest", requestHighest)
                     .queryParam("key_prf", keyPrefix)
                     .request()
                     .header("nonce", nonce)
@@ -48,7 +57,7 @@ public class GetBetweenClient {
 
                     keys.forEach(key -> {
                         logger.info("Key between: " + key);
-                        System.out.println("Key between: " + key);
+                        System.out.println("Keys in between with dataType: " + dataType + ": " + key);
                     });
                 }
             } else {

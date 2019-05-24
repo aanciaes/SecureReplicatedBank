@@ -15,6 +15,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import rest.server.model.DataType;
 
 /**
  * Wallet Server API
@@ -48,7 +49,7 @@ public interface WalletServer {
     @GET
     @Path("/getbetween")
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse getBetween(@Context HttpHeaders headers, @QueryParam("key_prf") String keyPrefix, @QueryParam("lowest") Long lowest, @QueryParam("highest") Long highest);
+    ClientResponse getBetween(@Context HttpHeaders headers, @QueryParam("data_type") DataType dataType, @QueryParam("key_prf") String keyPrefix, @QueryParam("lowest") Long lowest, @QueryParam("highest") Long highest);
 
     /**
      * Generates money for a user

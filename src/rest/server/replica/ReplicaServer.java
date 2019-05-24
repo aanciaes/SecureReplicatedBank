@@ -148,6 +148,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     break;
 
                 case GET_BETWEEN:
+                    DataType dataType = (DataType) objIn.readObject();
                     long lowest = (long) objIn.readObject();
                     long highest = (long) objIn.readObject();
                     boolean hasKeyPrefix = (boolean) objIn.readObject();
@@ -159,7 +160,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
                     long nonceGetBetween = (Long) objIn.readObject();
 
-                    appRes = getBetween(keyPrefix, lowest, highest, nonceGetBetween, reqType);
+                    appRes = getBetween(dataType, keyPrefix, lowest, highest, nonceGetBetween, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -199,26 +200,31 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private ReplicaResponse getBetween(String keyPrefix, Long lowest, Long highest, long nonce, WalletOperationType operationType) {
+    private ReplicaResponse getBetween(DataType dataType, String keyPrefix, Long lowest, Long highest, long nonce, WalletOperationType operationType) {
         List<String> rst = new ArrayList();
 
-        db.forEach((String key, TypedValue typedValue) -> {
-            if (keyPrefix != null) {
-                if (typedValue.getType() == DataType.HOMO_OPE_INT && key.startsWith(keyPrefix)) {
-                    if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
-                        rst.add(key);
+        if (dataType != DataType.HOMO_ADD) {
+            db.forEach((String key, TypedValue typedValue) -> {
+                if (keyPrefix != null) {
+                    if (typedValue.getType() == dataType && key.startsWith(keyPrefix)) {
+                        if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
+                            rst.add(key);
+                        }
+                    }
+                } else {
+                    if (typedValue.getType() == dataType) {
+                        if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
+                            rst.add(key);
+                        }
                     }
                 }
-            } else {
-                if (typedValue.getType() == DataType.HOMO_OPE_INT) {
-                    if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
-                        rst.add(key);
-                    }
-                }
-            }
-        });
+            });
 
-        return new ReplicaResponse(200, "Success", rst, (nonce + 1), operationType);
+            return new ReplicaResponse(200, "Success", rst, (nonce + 1), operationType);
+        } else {
+            //TODO: Implement with SGX
+            return new ReplicaResponse(400, "Not supported yet", null, (nonce + 1), operationType);
+        }
     }
 
     /**
