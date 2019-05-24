@@ -1,5 +1,6 @@
 package rest.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.PaillierKey;
@@ -27,17 +28,20 @@ public class SumHomoAddClient {
      * @param amount               amount to add to the user
      */
     @SuppressWarnings("Duplicates")
-    public static void sumMoney(WebTarget target, int faults, KeyPair kp, String amount, PaillierKey pk) {
+    public static void sumMoney(WebTarget target, int faults, KeyPair kp, DataType dataType, String amount, PaillierKey pk) {
         try {
             String toPubkString = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
-            amount = HomoAdd.encrypt(new BigInteger(amount), pk).toString();
 
             ClientSumRequest clientRequest = new ClientSumRequest();
             clientRequest.setUserIdentifier(toPubkString);
 
-            TypedValue clientTv = new TypedValue (amount, DataType.HOMO_ADD);
+            if (dataType == DataType.HOMO_ADD) {
+                amount = HomoAdd.encrypt(new BigInteger(amount), pk).toString();
+                clientRequest.setNsquare(pk.getNsquare().toString());
+            }
+
+            TypedValue clientTv = new TypedValue (amount, dataType);
             clientRequest.setTypedValue(clientTv);
-            clientRequest.setNsquare(pk.getNsquare().toString());
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());
@@ -55,21 +59,26 @@ public class SumHomoAddClient {
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
             int status = response.getStatus();
-            System.out.println(response.getStatusInfo().getReasonPhrase());
+            System.out.println(status);
             logger.info("Sum Money Status: " + status);
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
-                logger.debug("Amount summed: " + clientResponse.getBody());
+                TypedValue responseValue = new ObjectMapper().convertValue(clientResponse.getBody(), TypedValue.class);
 
-                int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.HOMO_ADD_SUM);
+                logger.debug("Amount summed: " + responseValue.getAmount());
+
+                int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.SUM);
 
                 if (conflicts > faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 }else{
-                    BigInteger responseAmount = HomoAdd.decrypt(clientRequest.getTypedValue().getAmountAsBigInteger(), pk);
-                    System.out.println(clientRequest.getTypedValue().getAmountAsBigInteger());
-                    System.out.println("Sum money: " + responseAmount);
+                    String responseAmount = responseValue.getAmount();
+                    if (dataType == DataType.HOMO_ADD) {
+                        responseAmount = HomoAdd.decrypt(responseValue.getAmountAsBigInteger(), pk).toString();
+                    }
+
+                    System.out.println("Balance after sum: " + responseAmount);
                 }
             } else {
                 logger.info(response.getStatusInfo().getReasonPhrase());

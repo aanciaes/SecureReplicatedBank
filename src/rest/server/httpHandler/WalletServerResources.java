@@ -36,6 +36,7 @@ import rest.server.model.ClientResponse;
 import rest.server.model.ClientSumRequest;
 import rest.server.model.ClientTransferRequest;
 import rest.server.model.CustomExtractor;
+import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
@@ -119,12 +120,17 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse getBetween(HttpHeaders headers, Long lowest, Long highest) {
+    public ClientResponse getBetween(HttpHeaders headers, DataType dataType, String keyPrefix, Long lowest, Long highest) {
         Long nonce = getNonceFromHeader(headers);
 
         try {
             if (lowest != null && highest != null) {
-                byte[] reply = invokeOp(false, WalletOperationType.GET_BETWEEN, lowest, highest, nonce);
+                byte[] reply;
+                if (keyPrefix != null) {
+                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
+                } else {
+                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, nonce);
+                }
 
                 // Reply from the replicas
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -244,8 +250,8 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse homoAddSum(HttpHeaders headers, ClientSumRequest clientSumRequest) {
-        logger.info(String.format("sum - encrypted amount: %s to user: %s", clientSumRequest.getTypedValue().getAmount(), clientSumRequest.getUserIdentifier()));
+    public ClientResponse sum(HttpHeaders headers, ClientSumRequest clientSumRequest) {
+        logger.info(String.format("sum - amount: %s to user: %s", clientSumRequest.getTypedValue().getAmount(), clientSumRequest.getUserIdentifier()));
 
         try {
             byte[] hashMessage = generateHash(clientSumRequest.getSerializeMessage().getBytes());
@@ -260,7 +266,7 @@ public class WalletServerResources implements WalletServer {
                 Long nonce = getNonceFromHeader(headers);
                 byte[] reply = invokeOp(
                         true,
-                        WalletOperationType.HOMO_ADD_SUM,
+                        WalletOperationType.SUM,
                         clientSumRequest,
                         nonce
                 );

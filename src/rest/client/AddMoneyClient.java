@@ -40,18 +40,22 @@ public class AddMoneyClient {
             PaillierKey pk = HomoAdd.generateKey();
             String opeIntKey = "Ola Palerma";
 
-            //AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000");
+            AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "3000");
 
             //AddMoneyHomoAddClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", pk);
-            //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "10000", opeIntKey);
+            //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", opeIntKey);
             //SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.HOMO_OPE_INT);
 
-            GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, 10, 14);
+            GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, DataType.WALLET, 980, 4000, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQK");
+            GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, DataType.HOMO_OPE_INT, 980, 1200, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQK");
 
-            //SumHomoAddClient.sumMoney(target, faults, kp, "1000", pk);
+            //SumHomoAddClient.sumMoney(target, faults, kp, DataType.WALLET, "1000", null);
+            //SumHomoAddClient.sumMoney(target, faults, kp, DataType.HOMO_ADD, "1000", pk);
+
             //GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
             //SetBalanceClient.setBalance(target, faults, kp, HelpSerial.toString(pk), "4000", DataType.HOMO_ADD);
             //GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

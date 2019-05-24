@@ -85,11 +85,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
                     break;
 
-                case HOMO_ADD_SUM:
+                case SUM:
                     ClientSumRequest cliRequestSum = (ClientSumRequest) objIn.readObject();
                     long nonceSum = (Long) objIn.readObject();
 
-                    appRes = homoAddSum(cliRequestSum, nonceSum, reqType);
+                    appRes = sum(cliRequestSum, nonceSum, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -148,11 +148,19 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     break;
 
                 case GET_BETWEEN:
+                    DataType dataType = (DataType) objIn.readObject();
                     long lowest = (long) objIn.readObject();
                     long highest = (long) objIn.readObject();
+                    boolean hasKeyPrefix = (boolean) objIn.readObject();
+                    String keyPrefix = null;
+
+                    if (hasKeyPrefix) {
+                        keyPrefix = (String) objIn.readObject();
+                    }
+
                     long nonceGetBetween = (Long) objIn.readObject();
 
-                    appRes = getBetween(lowest, highest, nonceGetBetween, reqType);
+                    appRes = getBetween(dataType, keyPrefix, lowest, highest, nonceGetBetween, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -192,18 +200,31 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private ReplicaResponse getBetween(Long lowest, Long highest, long nonce, WalletOperationType operationType) {
+    private ReplicaResponse getBetween(DataType dataType, String keyPrefix, Long lowest, Long highest, long nonce, WalletOperationType operationType) {
         List<String> rst = new ArrayList();
 
-        db.forEach((String key, TypedValue typedValue) -> {
-            if (typedValue.getType() == DataType.HOMO_OPE_INT) {
-                if (typedValue.getAmountAsLong() < highest && typedValue.getAmountAsLong() > lowest) {
-                    rst.add(key);
+        if (dataType != DataType.HOMO_ADD) {
+            db.forEach((String key, TypedValue typedValue) -> {
+                if (keyPrefix != null) {
+                    if (typedValue.getType() == dataType && key.startsWith(keyPrefix)) {
+                        if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
+                            rst.add(key);
+                        }
+                    }
+                } else {
+                    if (typedValue.getType() == dataType) {
+                        if (typedValue.getAmountAsLong() <= highest && typedValue.getAmountAsLong() >= lowest) {
+                            rst.add(key);
+                        }
+                    }
                 }
-            }
-        });
+            });
 
-        return new ReplicaResponse(200, "Success", rst, (nonce + 1), operationType);
+            return new ReplicaResponse(200, "Success", rst, (nonce + 1), operationType);
+        } else {
+            //TODO: Implement with SGX
+            return new ReplicaResponse(400, "Not supported yet", null, (nonce + 1), operationType);
+        }
     }
 
     /**
@@ -332,25 +353,35 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    public ReplicaResponse homoAddSum(ClientSumRequest sumRequest, Long nonce, WalletOperationType operationType) {
-        if (sumRequest.getTypedValue().getType() == DataType.HOMO_ADD) {
-            if (db.containsKey(sumRequest.getUserIdentifier())) {
-                TypedValue storedTv = db.get(sumRequest.getUserIdentifier());
+    private ReplicaResponse sum(ClientSumRequest sumRequest, Long nonce, WalletOperationType operationType) {
+        if (db.containsKey(sumRequest.getUserIdentifier())) {
+            TypedValue storedTv = db.get(sumRequest.getUserIdentifier());
 
-                if (storedTv.getType() == DataType.HOMO_ADD) {
+            if (storedTv.getType() == sumRequest.getTypedValue().getType()) {
 
-                    BigInteger result = HomoAdd.sum(storedTv.getAmountAsBigInteger(), sumRequest.getTypedValue().getAmountAsBigInteger(), new BigInteger(sumRequest.getNsquare()));
-                    storedTv.setAmountAsBigInteger(result);
+                switch (sumRequest.getTypedValue().getType()) {
+                    case HOMO_ADD:
+                        BigInteger homoAddResult = HomoAdd.sum(storedTv.getAmountAsBigInteger(), sumRequest.getTypedValue().getAmountAsBigInteger(), new BigInteger(sumRequest.getNsquare()));
+                        storedTv.setAmountAsBigInteger(homoAddResult);
+                        return new ReplicaResponse(200, "Success", storedTv, nonce + 1, operationType);
 
-                    return new ReplicaResponse(200, "Success", result, nonce + 1, operationType);
-                } else {
-                    return new ReplicaResponse(400, "Account is not of type Homo_Add", null, 0L, null);
+                    case WALLET:
+                        Double walletResult = sumRequest.getTypedValue().getAmountAsDouble() + storedTv.getAmountAsDouble();
+                        storedTv.setAmountAsDouble(walletResult);
+                        return new ReplicaResponse(200, "Success", storedTv, nonce + 1, operationType);
+
+                    case HOMO_OPE_INT:
+                        //TODO: Implement sum for ope int
+                        return new ReplicaResponse(500, "Not implemented yet - SGX", null, 0L, null);
+
+                    default:
+                        return new ReplicaResponse(400, "Unknown data type", null, 0L, null);
                 }
             } else {
-                return new ReplicaResponse(400, "Account does not exist: " + sumRequest.getUserIdentifier(), null, 0L, null);
+                return new ReplicaResponse(400, "Account is not of type expected type", null, 0L, null);
             }
         } else {
-            return new ReplicaResponse(400, "Sum not supported to data type: " + sumRequest.getTypedValue().getType(), null, 0L, null);
+            return new ReplicaResponse(400, "Account does not exist: " + sumRequest.getUserIdentifier(), null, 0L, null);
         }
     }
 
