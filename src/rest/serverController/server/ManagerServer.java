@@ -18,11 +18,11 @@ public interface ManagerServer {
     @Path("/up")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse upServer(@Context HttpHeaders headers, AdminServerRequest adminServerRequest);
+    void upServer(@Context HttpHeaders headers, AdminServerRequest adminServerRequest);
 
     @POST
     @Path("/down")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse downServer(@Context HttpHeaders headers, AdminServerRequest adminServerRequest);
+    void downServer(@Context HttpHeaders headers, AdminServerRequest adminServerRequest);
 }

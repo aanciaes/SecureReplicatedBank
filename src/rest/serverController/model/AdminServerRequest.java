@@ -6,38 +6,26 @@ import java.io.Serializable;
 
 public class AdminServerRequest implements Serializable {
 
-    private String type;
     private int serverId;
     private int serverPort;
     private boolean debug;
     private boolean unpredictable;
     private boolean testMode;
-    private int faults;
     private String signature;
     private long nonce;
+    private int faults;
 
     public AdminServerRequest(){
 
     }
-    public AdminServerRequest(String type, int serverId, int serverPort,
-                              boolean debug, boolean unpredictable, boolean testMode,
-                              int faults) {
-        this.type = type;
+    public AdminServerRequest(int serverId, int serverPort,
+                              boolean debug, boolean unpredictable, boolean testMode, int faults) {
         this.serverId = serverId;
         this.serverPort = serverPort;
         this.debug = debug;
         this.unpredictable = unpredictable;
         this.testMode = testMode;
         this.faults = faults;
-        this.signature = signature;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public int getServerId() {
@@ -80,14 +68,6 @@ public class AdminServerRequest implements Serializable {
         this.testMode = testMode;
     }
 
-    public int getFaults() {
-        return faults;
-    }
-
-    public void setFaults(int faults) {
-        this.faults = faults;
-    }
-
     public long getNonce() {
         return nonce;
     }
@@ -104,8 +84,16 @@ public class AdminServerRequest implements Serializable {
         this.signature = signature;
     }
 
+    public long getFaults() {
+        return faults;
+    }
+
+    public void setFaults(int faults) {
+        this.faults = faults;
+    }
+
     @JsonIgnore
     public String getSerializeMessage() {
-        return type + ":" + serverId + ":" + serverPort + ":" + debug + ":" + unpredictable + ":" + testMode + ":" + faults + ":" + nonce;
+        return serverId + ":" + serverPort + ":" + debug + ":" + unpredictable + ":" + testMode + ":" + nonce + ":" + faults;
     }
 }

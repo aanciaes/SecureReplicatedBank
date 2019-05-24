@@ -1,6 +1,7 @@
 package rest.serverController.client;
 
 import com.google.gson.Gson;
+import org.omg.CORBA.INTERNAL;
 import rest.client.AdminKeyLoader;
 import rest.client.Utils;
 import rest.serverController.model.AdminServerRequest;
@@ -14,9 +15,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ManagerClient {
+
     public static void main(String[] args) {
+
         try {
             System.setProperty("javax.net.ssl.trustStore", "client.jks");
             System.setProperty("javax.net.ssl.trustStorePassword", "qwerty");
@@ -29,7 +34,7 @@ public class ManagerClient {
             Gson gson = new Gson();
             WebTarget target = client.target(baseURI);
 
-            AdminServerRequest adminRequest = new AdminServerRequest("up", 0, 8080, false, false, false, 1);
+            AdminServerRequest adminRequest = new AdminServerRequest(0, 8080, false, false, false,1);
             adminRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(adminRequest.getSerializeMessage().getBytes());
