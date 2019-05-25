@@ -126,17 +126,27 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse getBetween(HttpHeaders headers, DataType dataType, String keyPrefix, Long lowest, Long highest) {
+    public ClientResponse getBetween(HttpHeaders headers, DataType dataType, String keyPrefix, Long lowest, Long highest, String encryptedKey) {
         Long nonce = getNonceFromHeader(headers);
 
         try {
             if (lowest != null && highest != null) {
                 byte[] reply;
-                if (keyPrefix != null) {
-                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
-                } else {
-                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, nonce);
+
+                if(DataType.HOMO_ADD == dataType){
+                    if (keyPrefix != null) {
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, true, encryptedKey,  nonce);
+                    } else {
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, true, encryptedKey, nonce);
+                    }
+                }else{
+                    if (keyPrefix != null) {
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix,false, nonce);
+                    } else {
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, false, nonce);
+                    }
                 }
+
 
                 // Reply from the replicas
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);

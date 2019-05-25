@@ -75,8 +75,6 @@ public class CreateHomoOpeIntClient {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 }else{
                     int responseAmount = ope.decrypt(clientRequest.getTypedValue().getAmountAsLong());
-                    System.out.println(clientRequest.getTypedValue().getAmount());
-                    System.out.println(responseAmount);
                 }
             } else {
                 logger.info(response.getStatusInfo().getReasonPhrase());

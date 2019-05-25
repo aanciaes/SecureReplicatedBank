@@ -68,7 +68,6 @@ public class SumClient {
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
             int status = response.getStatus();
-            System.out.println(status);
             logger.info("Sum Money Status: " + status);
 
             if (status == 200) {

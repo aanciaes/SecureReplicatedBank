@@ -15,10 +15,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +27,7 @@ import rest.server.model.ReplicaResponse;
 import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
 import rest.sgx.model.SGXClientSumRequest;
+import rest.sgx.model.SGXGetBetweenRequest;
 import rest.sgx.model.SGXResponse;
 import rest.sgx.model.TypedKey;
 import rest.utils.Utils;
@@ -41,6 +39,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import javax.xml.crypto.Data;
 
 /**
  * Represents the replica. This is the class that holds all the data of the system, currently saved in memory
@@ -168,18 +167,22 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
                 case GET_BETWEEN:
                     DataType dataType = (DataType) objIn.readObject();
-                    long lowest = (long) objIn.readObject();
-                    long highest = (long) objIn.readObject();
+                    Long lowest = (Long) objIn.readObject();
+                    Long highest =(Long) objIn.readObject();
                     boolean hasKeyPrefix = (boolean) objIn.readObject();
                     String keyPrefix = null;
-
                     if (hasKeyPrefix) {
                         keyPrefix = (String) objIn.readObject();
+                    }
+                    boolean hasEncryptedKey = (boolean) objIn.readObject();
+                    String encrypedKey = null;
+                    if(hasEncryptedKey){
+                        encrypedKey = (String) objIn.readObject();
                     }
 
                     long nonceGetBetween = (Long) objIn.readObject();
 
-                    appRes = getBetween(dataType, keyPrefix, lowest, highest, nonceGetBetween, reqType);
+                    appRes = getBetween(dataType, keyPrefix, lowest, highest, nonceGetBetween, reqType, encrypedKey);
                     objOut.writeObject(appRes);
 
                     break;
@@ -219,7 +222,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private ReplicaResponse getBetween(DataType dataType, String keyPrefix, Long lowest, Long highest, long nonce, WalletOperationType operationType) {
+    private ReplicaResponse getBetween(DataType dataType, String keyPrefix, Long lowest, Long highest, long nonce, WalletOperationType operationType, String encryptedKey) {
         List<String> rst = new ArrayList();
 
         if (dataType != DataType.HOMO_ADD) {
@@ -242,7 +245,10 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             return new ReplicaResponse(200, "Success", rst, (nonce + 1), operationType);
         } else {
             //TODO: Implement with SGX
-
+            SGXResponse sgxResponse = sgxGetBetween(keyPrefix, BigInteger.valueOf(lowest), BigInteger.valueOf(highest), encryptedKey);
+            if(sgxResponse.getStatusCode() != 200){
+                return new ReplicaResponse(sgxResponse.getStatusCode(),"Success" , sgxResponse.getBody().toString(), (nonce + 1), operationType);
+            }
             return new ReplicaResponse(400, "Not supported yet", null, (nonce + 1), operationType);
         }
     }
@@ -454,6 +460,35 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             return tv;
         }
     }
+
+    private SGXResponse sgxGetBetween(String keyPrefix, BigInteger lowest, BigInteger highest, String encryptedKey){
+        Map<String, BigInteger> toSgx = new HashMap<>();
+
+        db.forEach((String key, TypedValue typedValue) -> {
+            if(typedValue.getType() == DataType.HOMO_ADD && (keyPrefix == null ||  key.startsWith(keyPrefix))){
+                toSgx.put(key, typedValue.getAmountAsBigInteger());
+            }
+        });
+
+        SGXGetBetweenRequest sgxRequest = new SGXGetBetweenRequest(toSgx, lowest, highest, encryptedKey);
+
+
+
+        Client client = ClientBuilder.newBuilder()
+                .hostnameVerifier(new Utils.InsecureHostnameVerifier())
+                .build();
+
+        URI baseURI = UriBuilder.fromUri("https://0.0.0.0:6699/sgx").build();
+        WebTarget target = client.target(baseURI);
+        Gson gson = new Gson();
+        String json = gson.toJson(sgxRequest);
+
+        Response response = target.path("/getBetween").request()
+                .post(Entity.entity(json, MediaType.APPLICATION_JSON));
+
+        return response.readEntity(SGXResponse.class);
+    }
+
 
     private SGXResponse sgxSum(ClientSumRequest cliRequest) {
         TypedKey typedKey = sgxDb.get(cliRequest.getUserIdentifier());
