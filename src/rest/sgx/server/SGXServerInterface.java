@@ -3,6 +3,7 @@ package rest.sgx.server;
 import rest.sgx.model.SGXClientSumRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import rest.sgx.model.SGXResponse;
 
 @Path("/sgx")
 public interface SGXServerInterface {
@@ -11,7 +12,7 @@ public interface SGXServerInterface {
     @Path("/sum")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    String sum(SGXClientSumRequest sgxClientRequest);
+    SGXResponse sum(SGXClientSumRequest sgxClientRequest);
 
     @POST
     @Path("/compare")

@@ -3,6 +3,8 @@ package rest.sgx.server;
 import java.net.URI;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.core.UriBuilder;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -22,6 +24,9 @@ public class SGXServer {
 
         ResourceConfig config = new ResourceConfig();
         config.register(new SGXServerResources());
+
+        //Set default log levels
+        Configurator.setLevel(SGXServerResources.class.getName(), Level.INFO);
 
         JdkHttpServerFactory.createHttpServer(baseUri, config, SSLContext.getDefault());
 

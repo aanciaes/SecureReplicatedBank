@@ -3,6 +3,7 @@ package rest.server.replica;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import hlib.hj.mlib.HomoAdd;
 import java.io.ByteArrayInputStream;
@@ -29,6 +30,7 @@ import rest.server.model.ReplicaResponse;
 import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
 import rest.sgx.model.SGXClientSumRequest;
+import rest.sgx.model.SGXResponse;
 import rest.sgx.model.TypedKey;
 import rest.utils.Utils;
 
@@ -390,11 +392,12 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
                     case HOMO_OPE_INT:
 
-                        String encryptedBalance = sgxSum(sumRequest);
-                        if(encryptedBalance.equals("error")){
-                            return new ReplicaResponse(500, "Error - SGX", null, 0L, null);
+                        SGXResponse sgxResponse = sgxSum(sumRequest);
+                        if(sgxResponse.getStatusCode() != 200){
+                            return new ReplicaResponse(sgxResponse.getStatusCode(), sgxResponse.getBody().toString(), null, 0L, null);
                         }
-                        storedTv.setAmount(encryptedBalance);
+                        String newAmount = new ObjectMapper().convertValue(sgxResponse.getBody(), String.class);
+                        storedTv.setAmount(newAmount);
 
                         return new ReplicaResponse(200, "Success - SGX", storedTv, nonce + 1, operationType);
 
@@ -452,16 +455,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private String sgxSum(ClientSumRequest cliRequest) {
-
-        long start = System.currentTimeMillis();
+    private SGXResponse sgxSum(ClientSumRequest cliRequest) {
         TypedKey typedKey = sgxDb.get(cliRequest.getUserIdentifier());
 
         long balance = db.get(cliRequest.getUserIdentifier()).getAmountAsLong();
         SGXClientSumRequest sgxClientRequest = new SGXClientSumRequest(typedKey, balance , Long.parseLong(cliRequest.getTypedValue().getAmount()));
-
-        System.out.println("amount 1 sent: " + sgxClientRequest.getAmount1());
-        System.out.println("amount 2 sent: " + sgxClientRequest.getAmount2());
 
         Client client = ClientBuilder.newBuilder()
                 .hostnameVerifier(new Utils.InsecureHostnameVerifier())
@@ -475,10 +473,6 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         Response response = target.path("/sum").request()
                 .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
-        int status = response.getStatus();
-        logger.info("Insert client in sgx: " + status);
-
-        System.out.println("Time:: " + (System.currentTimeMillis() - start));
-        return response.readEntity(String.class);
+        return response.readEntity(SGXResponse.class);
     }
 }
