@@ -17,20 +17,37 @@ public class SGXServerResources implements SGXServerInterface{
     public String sum(SGXClientSumRequest sgxClientRequest) {
         try {
             PrivateKey privateKey = AdminSgxKeyLoader.loadPrivateKey("sgxPrivateKey.pem");
-            byte[] decryptedKey = Utils.decrypt(privateKey, sgxClientRequest.getTypedKey().getKey());
+            byte[] keyBytes = Base64.getDecoder().decode(sgxClientRequest.getTypedKey().getKey());
 
-            HomoOpeInt opeInt = new HomoOpeInt(Base64.getEncoder().encodeToString(decryptedKey));
-            Integer amount1 = opeInt.decrypt(sgxClientRequest.getAmount1());
-            Integer amount2 = opeInt.decrypt(sgxClientRequest.getAmount2());
+            byte[] decryptedKey = Utils.decrypt(privateKey, keyBytes);
 
-            Long result = opeInt.encrypt((amount1 + amount2));
-            return result.toString();
+            String homoOpeKey = new String(decryptedKey);
+            System.out.println("homoKey: " + homoOpeKey);
 
-        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-            e.printStackTrace();
+            HomoOpeInt opeInt = new HomoOpeInt(homoOpeKey);
+
+            long amount1 = sgxClientRequest.getAmount1();
+            long amount2 = sgxClientRequest.getAmount2();
+
+            System.out.println("1 enc: " + amount1);
+            System.out.println("2 enc: " + amount2);
+
+            long amount1Dec = opeInt.decrypt(amount1);
+            long amount2Dec = opeInt.decrypt(amount2);
+
+            System.out.println("1 dec: " + amount1Dec);
+            System.out.println("2 dec: " + amount2Dec);
+
+            Long sum = amount1Dec + amount2Dec;
+            System.out.println("sum: " + sum);
+
+            long result = opeInt.encrypt(sum.intValue());
+            return Long.toString(result);
+
+        } catch (Exception e) {
+            System.out.println("here");
+            return "error";
         }
-
-        return "error";
     }
 
     @Override

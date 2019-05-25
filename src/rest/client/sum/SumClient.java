@@ -36,8 +36,10 @@ public class SumClient {
 
             ClientSumRequest clientRequest = new ClientSumRequest();
             clientRequest.setUserIdentifier(toPubkString);
+
             PaillierKey paillierKey = null;
             HomoOpeInt homoOpeInt = null;
+
             if (dataType == DataType.HOMO_ADD) {
                 paillierKey = (PaillierKey) HelpSerial.fromString(key);
                 amount = HomoAdd.encrypt(new BigInteger(amount), paillierKey).toString();
@@ -83,6 +85,9 @@ public class SumClient {
                     String responseAmount = responseValue.getAmount();
                     if (dataType == DataType.HOMO_ADD) {
                         responseAmount = HomoAdd.decrypt(responseValue.getAmountAsBigInteger(), paillierKey).toString();
+                    }
+                    if (dataType == DataType.HOMO_OPE_INT) {
+                        responseAmount = ((Integer)homoOpeInt.decrypt(responseValue.getAmountAsLong())).toString();
                     }
 
                     System.out.println("Balance after sum: " + responseAmount);

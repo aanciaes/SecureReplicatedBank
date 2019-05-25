@@ -6,13 +6,13 @@ import java.io.Serializable;
 public class SGXClientSumRequest implements Serializable {
 
     private TypedKey typedKey;
-    private Long amount1;
-    private Long amount2;
+    private long amount1;
+    private long amount2;
 
     public SGXClientSumRequest() {
     }
 
-    public SGXClientSumRequest(TypedKey typedKey, Long amount1, Long amount2) {
+    public SGXClientSumRequest(TypedKey typedKey, long amount1, long amount2) {
         this.typedKey = typedKey;
         this.amount1 = amount1;
         this.amount2 = amount2;
@@ -26,19 +26,19 @@ public class SGXClientSumRequest implements Serializable {
         this.typedKey = typedKey;
     }
 
-    public Long getAmount1() {
+    public long getAmount1() {
         return amount1;
     }
 
-    public void setAmount1(Long amount1) {
+    public void setAmount1(long amount1) {
         this.amount1 = amount1;
     }
 
-    public Long getAmount2() {
+    public long getAmount2() {
         return amount2;
     }
 
-    public void setAmount2(Long amount2) {
+    public void setAmount2(long amount2) {
         this.amount2 = amount2;
     }
 }

@@ -454,9 +454,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
     private String sgxSum(ClientSumRequest cliRequest) {
 
+        long start = System.currentTimeMillis();
         TypedKey typedKey = sgxDb.get(cliRequest.getUserIdentifier());
-        Long balance = db.get(cliRequest.getUserIdentifier()).getAmountAsLong();
+
+        long balance = db.get(cliRequest.getUserIdentifier()).getAmountAsLong();
         SGXClientSumRequest sgxClientRequest = new SGXClientSumRequest(typedKey, balance , Long.parseLong(cliRequest.getTypedValue().getAmount()));
+
+        System.out.println("amount 1 sent: " + sgxClientRequest.getAmount1());
+        System.out.println("amount 2 sent: " + sgxClientRequest.getAmount2());
 
         Client client = ClientBuilder.newBuilder()
                 .hostnameVerifier(new Utils.InsecureHostnameVerifier())
@@ -466,14 +471,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         WebTarget target = client.target(baseURI);
         Gson gson = new Gson();
         String json = gson.toJson(sgxClientRequest);
-        long nonce = Utils.generateNonce();
+
         Response response = target.path("/sum").request()
                 .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
         int status = response.getStatus();
         logger.info("Insert client in sgx: " + status);
+
+        System.out.println("Time:: " + (System.currentTimeMillis() - start));
         return response.readEntity(String.class);
-
-
     }
 }

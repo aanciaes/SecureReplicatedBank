@@ -5,6 +5,7 @@ import hlib.hj.mlib.HomoOpeInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.*;
+import rest.utils.AdminSgxKeyLoader;
 import rest.utils.Utils;
 
 import javax.ws.rs.client.Entity;
@@ -29,7 +30,7 @@ public class CreateHomoOpeIntClient {
      * @param amount               amount to add to the user
      */
     @SuppressWarnings("Duplicates")
-    public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount, String homoKey) {
+    public static void createAccount(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount, String homoKey) {
 
         try {
             HomoOpeInt ope = new HomoOpeInt(homoKey);
@@ -42,6 +43,10 @@ public class CreateHomoOpeIntClient {
 
             TypedValue clientTv = new TypedValue (amount, DataType.HOMO_OPE_INT);
             clientRequest.setTypedValue(clientTv);
+
+            // Set homo key encrypted with sgx public key
+            byte[] encyptedPallietKey = Utils.encryptMessage(AdminSgxKeyLoader.loadPublicKey("sgxPublicKey.pem"), homoKey.getBytes());
+            clientRequest.setEncryptedKey(Base64.getEncoder().encodeToString(encyptedPallietKey));
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());

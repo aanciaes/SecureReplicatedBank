@@ -1,11 +1,10 @@
 package rest.sgx.server;
 
-import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
-import org.glassfish.jersey.server.ResourceConfig;
-
+import java.net.URI;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
+import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
+import org.glassfish.jersey.server.ResourceConfig;
 
 public class SGXServer {
 
@@ -14,7 +13,8 @@ public class SGXServer {
         System.setProperty("javax.net.ssl.keyStore", "sgxServer.jks");
         System.setProperty("javax.net.ssl.keyStorePassword", "qwerty");
     }
-    public static final int PORT = 6699;
+
+    private static final int PORT = 6699;
 
     public static void main(String[] args) throws Exception {
 
@@ -27,5 +27,4 @@ public class SGXServer {
 
         System.err.println("SSL SGX Server ready @ " + baseUri);
     }
-
 }

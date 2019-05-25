@@ -145,11 +145,11 @@ public class Utils {
         }
     }
 
-    public static byte[] decrypt(PrivateKey privateKey, String message) {
+    public static byte[] decrypt(PrivateKey privateKey, byte[] message) {
         try {
             Cipher c = Cipher.getInstance("RSA", "SunJCE");
             c.init(Cipher.DECRYPT_MODE, privateKey);
-            return c.doFinal(message.getBytes());
+            return c.doFinal(message);
         } catch (Exception e) {
             return new byte[0];
         }
