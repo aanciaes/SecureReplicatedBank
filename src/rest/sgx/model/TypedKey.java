@@ -2,7 +2,9 @@ package rest.sgx.model;
 
 import rest.server.model.DataType;
 
-public class TypedKey {
+import java.io.Serializable;
+
+public class TypedKey implements Serializable {
 
     private DataType type;
     private String key;

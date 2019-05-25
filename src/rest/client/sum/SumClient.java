@@ -2,7 +2,9 @@ package rest.client.sum;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
+import hlib.hj.mlib.HomoOpeInt;
 import hlib.hj.mlib.PaillierKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,7 +20,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.util.Base64;
 
-public class SumHomoAddClient {
+public class SumClient {
     private static Logger logger = LogManager.getLogger(CreateClient.class.getName());
     /**
      * Client that adds money to a user.
@@ -28,16 +30,21 @@ public class SumHomoAddClient {
      * @param amount               amount to add to the user
      */
     @SuppressWarnings("Duplicates")
-    public static void sumMoney(WebTarget target, int faults, KeyPair kp, DataType dataType, String amount, PaillierKey pk) {
+    public static void sumMoney(WebTarget target, int faults, KeyPair kp, DataType dataType, String amount, String key) {
         try {
             String toPubkString = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
 
             ClientSumRequest clientRequest = new ClientSumRequest();
             clientRequest.setUserIdentifier(toPubkString);
-
+            PaillierKey paillierKey = null;
+            HomoOpeInt homoOpeInt = null;
             if (dataType == DataType.HOMO_ADD) {
-                amount = HomoAdd.encrypt(new BigInteger(amount), pk).toString();
-                clientRequest.setNsquare(pk.getNsquare().toString());
+                paillierKey = (PaillierKey) HelpSerial.fromString(key);
+                amount = HomoAdd.encrypt(new BigInteger(amount), paillierKey).toString();
+                clientRequest.setNsquare(paillierKey.getNsquare().toString());
+            }else if(dataType == DataType.HOMO_OPE_INT){
+                homoOpeInt = new HomoOpeInt(key);
+                amount = ((Long) homoOpeInt.encrypt(Integer.parseInt(amount))).toString();
             }
 
             TypedValue clientTv = new TypedValue (amount, dataType);
@@ -75,7 +82,7 @@ public class SumHomoAddClient {
                 }else{
                     String responseAmount = responseValue.getAmount();
                     if (dataType == DataType.HOMO_ADD) {
-                        responseAmount = HomoAdd.decrypt(responseValue.getAmountAsBigInteger(), pk).toString();
+                        responseAmount = HomoAdd.decrypt(responseValue.getAmountAsBigInteger(), paillierKey).toString();
                     }
 
                     System.out.println("Balance after sum: " + responseAmount);

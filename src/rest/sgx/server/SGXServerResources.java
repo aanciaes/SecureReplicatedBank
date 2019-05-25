@@ -1,49 +1,50 @@
 package rest.sgx.server;
 
+import hlib.hj.mlib.HomoOpeInt;
+import rest.sgx.model.SGXClientSumRequest;
+import rest.utils.AdminSgxKeyLoader;
+import rest.utils.Utils;
 
-import rest.server.model.TypedValue;
-import rest.sgx.model.SGXClientRequest;
-import rest.sgx.model.TypedKey;
-
-import javax.ws.rs.core.HttpHeaders;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 
 public class SGXServerResources implements SGXServerInterface{
-    private Map<String, TypedKey> sgxDb = new HashMap<String, TypedKey>();
 
     @Override
-    public Map<String, TypedKey> listUsers() {
-        return sgxDb;
+    public String sum(SGXClientSumRequest sgxClientRequest) {
+        try {
+            PrivateKey privateKey = AdminSgxKeyLoader.loadPrivateKey("sgxPrivateKey.pem");
+            byte[] decryptedKey = Utils.decrypt(privateKey, sgxClientRequest.getTypedKey().getKey());
+
+            HomoOpeInt opeInt = new HomoOpeInt(Base64.getEncoder().encodeToString(decryptedKey));
+            Integer amount1 = opeInt.decrypt(sgxClientRequest.getAmount1());
+            Integer amount2 = opeInt.decrypt(sgxClientRequest.getAmount2());
+
+            Long result = opeInt.encrypt((amount1 + amount2));
+            return result.toString();
+
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+
+        return "error";
     }
 
     @Override
-    public void create(HttpHeaders headers, SGXClientRequest sgxClientRequest) {
-        TypedKey typedKey = new TypedKey(sgxClientRequest.getTypedValue().getType(), sgxClientRequest.getClientKey());
-        sgxDb.put(sgxClientRequest.getClientID(), typedKey);
-        System.out.println("received");
-    }
-
-    @Override
-    public void sum(HttpHeaders headers, SGXClientRequest sgxClientRequest) {
+    public void compare(SGXClientSumRequest sgxClientRequest) {
 
     }
 
     @Override
-    public void compare(HttpHeaders headers, SGXClientRequest sgxClientRequest) {
+    public void set_conditional(SGXClientSumRequest sgxClientRequest) {
 
     }
 
     @Override
-    public void set_conditional(HttpHeaders headers, SGXClientRequest sgxClientRequest) {
-
-    }
-
-    @Override
-    public void add_conditional(HttpHeaders headers, SGXClientRequest sgxClientRequest) {
+    public void add_conditional(SGXClientSumRequest sgxClientRequest) {
 
     }
 }

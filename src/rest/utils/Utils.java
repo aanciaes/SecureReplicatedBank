@@ -11,13 +11,7 @@ import rest.server.model.WalletOperationType;
 import javax.crypto.Cipher;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Signature;
+import java.security.*;
 import java.util.Base64;
 
 public class Utils {
@@ -149,6 +143,17 @@ public class Utils {
             logger.warn(e.getMessage());
             return false;
         }
+    }
+
+    public static byte[] decrypt(PrivateKey privateKey, String message) {
+        try {
+            Cipher c = Cipher.getInstance("RSA", "SunJCE");
+            c.init(Cipher.DECRYPT_MODE, privateKey);
+            return c.doFinal(message.getBytes());
+        } catch (Exception e) {
+            return new byte[0];
+        }
+
     }
 
     /**

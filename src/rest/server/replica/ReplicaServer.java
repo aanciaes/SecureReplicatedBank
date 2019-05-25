@@ -3,6 +3,7 @@ package rest.server.replica;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
+import com.google.gson.Gson;
 import hlib.hj.mlib.HomoAdd;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,6 +13,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,17 @@ import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
+import rest.sgx.model.SGXClientSumRequest;
+import rest.sgx.model.TypedKey;
+import rest.utils.Utils;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * Represents the replica. This is the class that holds all the data of the system, currently saved in memory
@@ -35,6 +48,8 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     private static Logger logger = LogManager.getLogger(ReplicaServer.class.getName());
 
     private Map<String, TypedValue> db = new ConcurrentHashMap<>();
+    private Map<String, TypedKey> sgxDb = new ConcurrentHashMap<>();
+
     private boolean unpredictable;
 
     public ReplicaServer(int id, boolean unpredictable) {
@@ -71,8 +86,10 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     long nonce = (Long) objIn.readObject();
 
                     appRes = createAccount(cliRequestCreate, nonce, reqType);
+                    if(appRes.getStatusCode() == 200){
+                        sgxDb.put(cliRequestCreate.getToPubKey(), new TypedKey(cliRequestCreate.getTypedValue().getType(), cliRequestCreate.getEncryptedKey()));
+                    }
                     objOut.writeObject(appRes);
-
                     break;
 
                 case TRANSFER_MONEY:
@@ -372,8 +389,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                         return new ReplicaResponse(200, "Success", storedTv, nonce + 1, operationType);
 
                     case HOMO_OPE_INT:
-                        //TODO: Implement sum for ope int
-                        return new ReplicaResponse(500, "Not implemented yet - SGX", null, 0L, null);
+
+                        String encryptedBalance = sgxSum(sumRequest);
+                        if(encryptedBalance.equals("error")){
+                            return new ReplicaResponse(500, "Error - SGX", null, 0L, null);
+                        }
+                        storedTv.setAmount(encryptedBalance);
+
+                        return new ReplicaResponse(200, "Success - SGX", storedTv, nonce + 1, operationType);
 
                     default:
                         return new ReplicaResponse(400, "Unknown data type", null, 0L, null);
@@ -427,5 +450,30 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         } else {
             return tv;
         }
+    }
+
+    private String sgxSum(ClientSumRequest cliRequest) {
+
+        TypedKey typedKey = sgxDb.get(cliRequest.getUserIdentifier());
+        Long balance = db.get(cliRequest.getUserIdentifier()).getAmountAsLong();
+        SGXClientSumRequest sgxClientRequest = new SGXClientSumRequest(typedKey, balance , Long.parseLong(cliRequest.getTypedValue().getAmount()));
+
+        Client client = ClientBuilder.newBuilder()
+                .hostnameVerifier(new Utils.InsecureHostnameVerifier())
+                .build();
+
+        URI baseURI = UriBuilder.fromUri("https://0.0.0.0:6699/sgx").build();
+        WebTarget target = client.target(baseURI);
+        Gson gson = new Gson();
+        String json = gson.toJson(sgxClientRequest);
+        long nonce = Utils.generateNonce();
+        Response response = target.path("/sum").request()
+                .post(Entity.entity(json, MediaType.APPLICATION_JSON));
+
+        int status = response.getStatus();
+        logger.info("Insert client in sgx: " + status);
+        return response.readEntity(String.class);
+
+
     }
 }

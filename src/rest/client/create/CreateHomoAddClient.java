@@ -32,7 +32,7 @@ public class CreateHomoAddClient {
      * @param amount               amount to add to the user
      */
     @SuppressWarnings("Duplicates")
-    public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount, PaillierKey pk) {
+    public static void createAccount(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount, PaillierKey pk) {
 
         try {
             String toPubkString = Base64.getEncoder().encodeToString(destinationPublicKey.getEncoded());//pk.getNsquare().toString();

@@ -46,7 +46,6 @@ import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
-import rest.sgx.model.SGXClientRequest;
 
 /**
  * Restful resources of wallet server
@@ -181,8 +180,6 @@ public class WalletServerResources implements WalletServer {
             if (!Arrays.equals(hashMessage, decryptedHash)) {
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
-
-            sgxClientCreate(cliRequest);
 
             Long nonce = getNonceFromHeader(headers);
             byte[] reply = invokeOp(
@@ -544,27 +541,4 @@ public class WalletServerResources implements WalletServer {
         return r.nextInt(high - low) + low;
     }
 
-    private void sgxClientCreate(ClientCreateRequest cliRequest) {
-
-        if(cliRequest.getEncryptedKey() == null){
-            return;
-        }
-
-        SGXClientRequest sgxRequest = new SGXClientRequest(cliRequest.getToPubKey(), cliRequest.getEncryptedKey(), cliRequest.getTypedValue());
-        Client client = ClientBuilder.newBuilder()
-                .hostnameVerifier(new Utils.InsecureHostnameVerifier())
-                .build();
-
-        URI baseURI = UriBuilder.fromUri("https://0.0.0.0:6699/sgx").build();
-        WebTarget target = client.target(baseURI);
-        Gson gson = new Gson();
-        String json = gson.toJson(sgxRequest);
-        long nonce = Utils.generateNonce();
-        Response response = target.path("/create").request().header("nonce", cliRequest.getNonce())
-                .post(Entity.entity(json, MediaType.APPLICATION_JSON));
-
-        int status = response.getStatus();
-        logger.info("Insert client in sgx: " + status);
-
-    }
 }
