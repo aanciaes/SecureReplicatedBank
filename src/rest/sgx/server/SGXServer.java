@@ -1,18 +1,18 @@
-package rest.sgx;
+package rest.sgx.server;
 
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
-import rest.server.httpHandler.WalletServerResources;
 
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.core.UriBuilder;
-import java.net.InetAddress;
 import java.net.URI;
 
 public class SGXServer {
 
     static {
         System.setProperty("java.net.preferIPv4Stack", "true");
+        System.setProperty("javax.net.ssl.keyStore", "sgxServer.jks");
+        System.setProperty("javax.net.ssl.keyStorePassword", "qwerty");
     }
     public static final int PORT = 6699;
 

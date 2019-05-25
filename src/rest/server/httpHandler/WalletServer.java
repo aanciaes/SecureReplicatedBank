@@ -1,6 +1,6 @@
 package rest.server.httpHandler;
 
-import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientCreateRequest;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientSumRequest;
 import rest.server.model.ClientTransferRequest;
@@ -63,7 +63,7 @@ public interface WalletServer {
     @Path("/generate")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse generateMoney(@Context HttpHeaders headers, ClientAddMoneyRequest cliRequest);
+    ClientResponse generateMoney(@Context HttpHeaders headers, ClientCreateRequest cliRequest);
 
     /**
      * Transfers money from one user to another
@@ -88,5 +88,5 @@ public interface WalletServer {
     @Path("/set")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse setBalance (@Context HttpHeaders headers, ClientAddMoneyRequest clientSetRequest);
+    ClientResponse setBalance (@Context HttpHeaders headers, ClientCreateRequest clientSetRequest);
 }

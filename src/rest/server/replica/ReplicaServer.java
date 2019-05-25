@@ -19,7 +19,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientCreateRequest;
 import rest.server.model.ClientSumRequest;
 import rest.server.model.ClientTransferRequest;
 import rest.server.model.DataType;
@@ -66,11 +66,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             ReplicaResponse appRes;
 
             switch (reqType) {
-                case GENERATE_MONEY:
-                    ClientAddMoneyRequest cliRequestCreate = (ClientAddMoneyRequest) objIn.readObject();
+                case CREATE_ACCOUNT:
+                    ClientCreateRequest cliRequestCreate = (ClientCreateRequest) objIn.readObject();
                     long nonce = (Long) objIn.readObject();
 
-                    appRes = addMoney(cliRequestCreate, nonce, reqType);
+                    appRes = createAccount(cliRequestCreate, nonce, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -94,7 +94,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
                     break;
                 case SET_BALANCE:
-                    ClientAddMoneyRequest cliSetRequest = (ClientAddMoneyRequest) objIn.readObject();
+                    ClientCreateRequest cliSetRequest = (ClientCreateRequest) objIn.readObject();
                     long nonceSet = (Long) objIn.readObject();
 
                     appRes = setBalance(cliSetRequest, nonceSet, reqType);
@@ -120,7 +120,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         return reply;
     }
 
-    private ReplicaResponse setBalance(ClientAddMoneyRequest cliSetRequest, long nonce, WalletOperationType operationType) {
+    private ReplicaResponse setBalance(ClientCreateRequest cliSetRequest, long nonce, WalletOperationType operationType) {
         db.put(cliSetRequest.getToPubKey(), new TypedValue(cliSetRequest.getTypedValue().getAmount(), cliSetRequest.getTypedValue().getType()));
         return new ReplicaResponse(200, "Success", forceError(db.get(cliSetRequest.getToPubKey())), (nonce + 1), operationType);
     }
@@ -223,6 +223,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             return new ReplicaResponse(200, "Success", rst, (nonce + 1), operationType);
         } else {
             //TODO: Implement with SGX
+
             return new ReplicaResponse(400, "Not supported yet", null, (nonce + 1), operationType);
         }
     }
@@ -235,23 +236,23 @@ public class ReplicaServer extends DefaultSingleRecoverable {
      * @param operationType Type of the operation
      * @return Replica response containing the new balance of the user
      */
-    private ReplicaResponse addMoney(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
+    private ReplicaResponse createAccount(ClientCreateRequest cliRequest, Long nonce, WalletOperationType operationType) {
         TypedValue requestTv = cliRequest.getTypedValue();
 
         switch (requestTv.getType()) {
             case WALLET:
-                return walletAddMoney(cliRequest, nonce, operationType);
+                return createWallet(cliRequest, nonce, operationType);
             case HOMO_ADD:
-                return homoAddCreate(cliRequest, nonce, operationType);
+                return createHomoAdd(cliRequest, nonce, operationType);
             case HOMO_OPE_INT:
-                return homoOpeIntCreate(cliRequest, nonce, operationType);
+                return createHomoOpeInt(cliRequest, nonce, operationType);
             default:
                 return new ReplicaResponse(400, "Invalid DataType: " + requestTv.getType(), null, 0L, null);
         }
     }
 
     @SuppressWarnings("Duplicates")
-    private ReplicaResponse walletAddMoney(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
+    private ReplicaResponse createWallet(ClientCreateRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
             db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.WALLET));
@@ -279,7 +280,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     }
 
     @SuppressWarnings("Duplicates")
-    private ReplicaResponse homoAddCreate(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
+    private ReplicaResponse createHomoAdd(ClientCreateRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
             db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.HOMO_ADD));
@@ -299,7 +300,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private ReplicaResponse homoOpeIntCreate(ClientAddMoneyRequest cliRequest, Long nonce, WalletOperationType operationType) {
+    private ReplicaResponse createHomoOpeInt(ClientCreateRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
             db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.HOMO_OPE_INT));

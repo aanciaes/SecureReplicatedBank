@@ -16,9 +16,9 @@ import rest.server.model.DataType;
 /**
  * Client that adds money
  */
-public class AddMoneyClient {
+public class CreateClient {
 
-    private static Logger logger = LogManager.getLogger(AddMoneyClient.class.getName());
+    private static Logger logger = LogManager.getLogger(CreateClient.class.getName());
 
     public static void main(String[] args) {
         try {
@@ -38,14 +38,14 @@ public class AddMoneyClient {
             PaillierKey pk = HomoAdd.generateKey();
             String opeIntKey = "Ola Palerma";
 
-            AddMoneyWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "3000");
+            //CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "3000");
 
-            //AddMoneyHomoAddClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", pk);
-            //AddMoneyHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", opeIntKey);
+            CreateHomoAddClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", pk);
+            //CreateHomoOpeIntClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000", opeIntKey);
             //SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.HOMO_OPE_INT);
 
             GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, DataType.WALLET, 980, 4000, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQK");
-            GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, DataType.HOMO_OPE_INT, 980, 1200, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQK");
+            //GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, DataType.HOMO_OPE_INT, 980, 1200, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQK");
 
             //SumHomoAddClient.sumMoney(target, faults, kp, DataType.WALLET, "1000", null);
             //SumHomoAddClient.sumMoney(target, faults, kp, DataType.HOMO_ADD, "1000", pk);

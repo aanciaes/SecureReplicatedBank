@@ -1,9 +1,11 @@
 package rest.client;
 
 import com.google.gson.Gson;
+import hlib.hj.mlib.HomoOpeInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.*;
+
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
@@ -12,8 +14,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Base64;
 
-public class AddMoneyWalletClient {
-    private static Logger logger = LogManager.getLogger(AddMoneyClient.class.getName());
+public class CreateHomoOpeIntClient {
+
+    private static Logger logger = LogManager.getLogger(CreateClient.class.getName());
 
     /**
      * Client that adds money to a user.
@@ -25,14 +28,18 @@ public class AddMoneyWalletClient {
      * @param amount               amount to add to the user
      */
     @SuppressWarnings("Duplicates")
-    public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount) {
+    public static void addMoney(WebTarget target, int faults, PrivateKey adminPrivateKey, PublicKey destinationPublicKey, String amount, String homoKey) {
 
         try {
+            HomoOpeInt ope = new HomoOpeInt(homoKey);
+
             String toPubkString = Base64.getEncoder().encodeToString(destinationPublicKey.getEncoded());
-            ClientAddMoneyRequest clientRequest = new ClientAddMoneyRequest();
+            amount = String.valueOf(ope.encrypt(Integer.parseInt(amount)));
+
+            ClientCreateRequest clientRequest = new ClientCreateRequest();
             clientRequest.setToPubKey(toPubkString);
 
-            TypedValue clientTv = new TypedValue (amount, DataType.WALLET);
+            TypedValue clientTv = new TypedValue (amount, DataType.HOMO_OPE_INT);
             clientRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
@@ -60,6 +67,10 @@ public class AddMoneyWalletClient {
 
                 if (conflicts > faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
+                }else{
+                    int responseAmount = ope.decrypt(clientRequest.getTypedValue().getAmountAsLong());
+                    System.out.println(clientRequest.getTypedValue().getAmount());
+                    System.out.println(responseAmount);
                 }
             } else {
                 logger.info(response.getStatusInfo().getReasonPhrase());

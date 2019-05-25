@@ -5,7 +5,7 @@ package rest.server.model;
  */
 public enum WalletOperationType {
     GET_ALL,
-    GENERATE_MONEY,
+    CREATE_ACCOUNT,
     TRANSFER_MONEY,
     GET_BALANCE,
     SUM,

@@ -15,7 +15,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.math.BigInteger;
-import java.net.URLEncoder;
 import java.security.KeyPair;
 import java.util.Base64;
 
@@ -42,7 +41,7 @@ public class SetBalanceClient {
                     HomoOpeInt ope = new HomoOpeInt(homoKey);
                     amount = String.valueOf(ope.encrypt(Integer.parseInt(amount)));
             }
-            ClientAddMoneyRequest clientSetRequest = new ClientAddMoneyRequest();
+            ClientCreateRequest clientSetRequest = new ClientCreateRequest();
             clientSetRequest.setToPubKey(toPubkString);
 
             TypedValue clientTv = new TypedValue (amount, dataType);

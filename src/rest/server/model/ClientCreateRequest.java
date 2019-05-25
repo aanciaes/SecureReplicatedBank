@@ -5,17 +5,17 @@ import java.io.Serializable;
 /**
  * Input class of the add money request
  */
-public class ClientAddMoneyRequest implements Serializable {
+public class ClientCreateRequest implements Serializable {
     private String toPubKey;
     private TypedValue typedValue;
     private Long nonce;
     private String signature;
     private String encryptedKey;
 
-    public ClientAddMoneyRequest() {
+    public ClientCreateRequest() {
     }
 
-    public ClientAddMoneyRequest(String toPubKey, TypedValue typedValue, Long nonce, String signature, String encryptedKey) {
+    public ClientCreateRequest(String toPubKey, TypedValue typedValue, Long nonce, String signature, String encryptedKey) {
         this.toPubKey = toPubKey;
         this.typedValue = typedValue;
         this.nonce = nonce;

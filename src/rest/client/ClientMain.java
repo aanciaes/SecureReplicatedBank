@@ -29,7 +29,7 @@ public class ClientMain {
     public static void main(String[] args) throws Exception {
 
         //Configuring standard log levels
-        Configurator.setLevel(AddMoneyClient.class.getName(), Level.INFO);
+        Configurator.setLevel(CreateClient.class.getName(), Level.INFO);
         Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
         Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
         Configurator.setLevel(Utils.class.getName(), Level.INFO);
@@ -43,14 +43,14 @@ public class ClientMain {
         }
 
         if (cmd.hasOption("d")) {
-            Configurator.setLevel(AddMoneyClient.class.getName(), Level.DEBUG);
+            Configurator.setLevel(CreateClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(GetBalanceClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(TransferClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(Utils.class.getName(), Level.DEBUG);
         }
 
         if (cmd.hasOption('t')) {
-            Configurator.setLevel(AddMoneyClient.class.getName(), Level.OFF);
+            Configurator.setLevel(CreateClient.class.getName(), Level.OFF);
             Configurator.setLevel(GetBalanceClient.class.getName(), Level.OFF);
             Configurator.setLevel(TransferClient.class.getName(), Level.OFF);
             Configurator.setLevel(Utils.class.getName(), Level.OFF);
@@ -68,7 +68,7 @@ public class ClientMain {
             try {
                 KeyPair kp = Utils.generateNewKeyPair(1024);
                 users.add(kp);
-                AddMoneyWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000.0");
+                CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000.0");
                 nUsers++;
             } catch (Exception e) {
                 e.printStackTrace();

@@ -14,12 +14,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.math.BigInteger;
 import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.Base64;
 
 public class SumHomoAddClient {
-    private static Logger logger = LogManager.getLogger(AddMoneyClient.class.getName());
+    private static Logger logger = LogManager.getLogger(CreateClient.class.getName());
     /**
      * Client that adds money to a user.
      *

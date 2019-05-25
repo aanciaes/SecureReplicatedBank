@@ -37,7 +37,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.client.Utils;
 import rest.client.AdminSgxKeyLoader;
-import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientCreateRequest;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientSumRequest;
 import rest.server.model.ClientTransferRequest;
@@ -46,6 +46,7 @@ import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
+import rest.sgx.model.SGXClientRequest;
 
 /**
  * Restful resources of wallet server
@@ -164,7 +165,7 @@ public class WalletServerResources implements WalletServer {
 
     @Override
     @SuppressWarnings("Duplicates")
-    public ClientResponse generateMoney(HttpHeaders headers, ClientAddMoneyRequest cliRequest) {
+    public ClientResponse createAccount(HttpHeaders headers, ClientCreateRequest cliRequest) {
         logger.info(String.format("generating: %s for user: %s ---", cliRequest.getTypedValue().getAmount(), cliRequest.getToPubKey()));
 
         try {
@@ -301,7 +302,7 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse setBalance(HttpHeaders headers, ClientAddMoneyRequest clientSetRequest) {
+    public ClientResponse setBalance(HttpHeaders headers, ClientCreateRequest clientSetRequest) {
         logger.info(String.format("set - encrypted amount: %s to user: %s", clientSetRequest.getTypedValue().getAmount(), clientSetRequest.getToPubKey()));
 
         try {
@@ -543,20 +544,21 @@ public class WalletServerResources implements WalletServer {
         return r.nextInt(high - low) + low;
     }
 
-    private void sgxClientCreate(ClientAddMoneyRequest cliRequest) {
+    private void sgxClientCreate(ClientCreateRequest cliRequest) {
 
         if(cliRequest.getEncryptedKey() == null){
             return;
         }
 
+        SGXClientRequest sgxRequest = new SGXClientRequest(cliRequest.getToPubKey(), cliRequest.getEncryptedKey(), cliRequest.getTypedValue());
         Client client = ClientBuilder.newBuilder()
                 .hostnameVerifier(new Utils.InsecureHostnameVerifier())
                 .build();
 
-        URI baseURI = UriBuilder.fromUri("https://0.0.0.0:6699/sgx/").build();
+        URI baseURI = UriBuilder.fromUri("https://0.0.0.0:6699/sgx").build();
         WebTarget target = client.target(baseURI);
         Gson gson = new Gson();
-        String json = gson.toJson(cliRequest);
+        String json = gson.toJson(sgxRequest);
         long nonce = Utils.generateNonce();
         Response response = target.path("/create").request().header("nonce", cliRequest.getNonce())
                 .post(Entity.entity(json, MediaType.APPLICATION_JSON));

@@ -24,6 +24,8 @@ public class WalletJdkHttpServer {
     public static void main(String[] args) throws Exception {
         System.setProperty("javax.net.ssl.keyStore", "server.jks");
         System.setProperty("javax.net.ssl.keyStorePassword", "qwerty");
+        System.setProperty("javax.net.ssl.trustStore", "sgxClient.jks");
+        System.setProperty("javax.net.ssl.trustStorePassword", "qwerty");
 
         int port = 8080;
         int replicaId = 0;
