@@ -1,8 +1,8 @@
 package rest.serverController.client;
 
 import com.google.gson.Gson;
-import rest.client.AdminSgxKeyLoader;
-import rest.client.Utils;
+import rest.utils.AdminSgxKeyLoader;
+import rest.utils.Utils;
 import rest.serverController.model.AdminServerRequest;
 
 import javax.ws.rs.client.Client;

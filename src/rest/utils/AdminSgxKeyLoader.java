@@ -1,4 +1,4 @@
-package rest.client;
+package rest.utils;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

@@ -1,4 +1,4 @@
-package rest.client;
+package rest.client.create;
 
 import com.google.gson.Gson;
 import hlib.hj.mlib.HomoAdd;
@@ -6,6 +6,8 @@ import hlib.hj.mlib.PaillierKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.*;
+import rest.utils.AdminSgxKeyLoader;
+import rest.utils.Utils;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -56,7 +58,7 @@ public class CreateHomoAddClient {
             Gson gson = new Gson();
             String json = gson.toJson(clientRequest);
             long nonce = Utils.generateNonce();
-            Response response = target.path("/generate").request().header("nonce", nonce)
+            Response response = target.path("/create").request().header("nonce", nonce)
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
             int status = response.getStatus();
@@ -66,7 +68,7 @@ public class CreateHomoAddClient {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
                 logger.debug("Amount Added: " + clientResponse.getBody());
 
-                int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.GENERATE_MONEY);
+                int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.CREATE_ACCOUNT);
 
                 if (conflicts > faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");

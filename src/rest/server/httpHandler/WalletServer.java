@@ -60,10 +60,10 @@ public interface WalletServer {
      * @return Client response with the new balance of the user and with all replica responses
      */
     @POST
-    @Path("/generate")
+    @Path("/create")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse generateMoney(@Context HttpHeaders headers, ClientCreateRequest cliRequest);
+    ClientResponse createAccount(@Context HttpHeaders headers, ClientCreateRequest cliRequest);
 
     /**
      * Transfers money from one user to another

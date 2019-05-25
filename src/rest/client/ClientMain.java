@@ -7,6 +7,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+import rest.client.create.CreateClient;
+import rest.client.create.CreateWalletClient;
+import rest.client.get.GetBalanceClient;
+import rest.client.sum.TransferClient;
+import rest.utils.AdminSgxKeyLoader;
+import rest.utils.Utils;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;

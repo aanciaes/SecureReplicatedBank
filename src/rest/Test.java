@@ -1,11 +1,8 @@
 package rest;
 
-import hlib.hj.mlib.HomoAdd;
-import hlib.hj.mlib.PaillierKey;
-import java.math.BigInteger;
 import java.security.KeyPair;
 import java.util.Base64;
-import rest.client.Utils;
+import rest.utils.Utils;
 
 public class Test {
 

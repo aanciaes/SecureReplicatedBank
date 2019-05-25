@@ -1,4 +1,4 @@
-package rest.client;
+package rest.client.get;
 
 import hlib.hj.mlib.HomoOpeInt;
 import java.util.ArrayList;
@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 import rest.server.model.DataType;
 import rest.server.model.WalletOperationType;
+import rest.utils.Utils;
 
 public class GetBetweenClient {
 

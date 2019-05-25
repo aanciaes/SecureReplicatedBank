@@ -1,4 +1,4 @@
-package rest.client;
+package rest.client.sum;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -6,7 +6,9 @@ import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.PaillierKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import rest.client.create.CreateClient;
 import rest.server.model.*;
+import rest.utils.Utils;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;

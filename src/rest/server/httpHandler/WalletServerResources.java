@@ -35,8 +35,8 @@ import javax.ws.rs.core.*;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import rest.client.Utils;
-import rest.client.AdminSgxKeyLoader;
+import rest.utils.Utils;
+import rest.utils.AdminSgxKeyLoader;
 import rest.server.model.ClientCreateRequest;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientSumRequest;
@@ -187,7 +187,7 @@ public class WalletServerResources implements WalletServer {
             Long nonce = getNonceFromHeader(headers);
             byte[] reply = invokeOp(
                     true,
-                    WalletOperationType.GENERATE_MONEY,
+                    WalletOperationType.CREATE_ACCOUNT,
                     cliRequest,
                     nonce
             );

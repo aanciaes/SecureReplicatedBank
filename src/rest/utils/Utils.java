@@ -1,4 +1,4 @@
-package rest.client;
+package rest.utils;
 
 import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.util.KeyLoader;

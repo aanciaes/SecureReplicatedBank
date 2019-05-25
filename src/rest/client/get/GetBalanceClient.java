@@ -1,6 +1,5 @@
-package rest.client;
+package rest.client.get;
 
-import com.fasterxml.jackson.databind.JsonSerializable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
@@ -16,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
+import rest.utils.Utils;
 
 /**
  * Client that returns the balance of a user

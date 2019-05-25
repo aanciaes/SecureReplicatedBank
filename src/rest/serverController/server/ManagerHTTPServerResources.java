@@ -1,6 +1,6 @@
 package rest.serverController.server;
 
-import rest.client.AdminSgxKeyLoader;
+import rest.utils.AdminSgxKeyLoader;
 import rest.serverController.model.AdminServerRequest;
 
 import javax.crypto.Cipher;
