@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import rest.server.model.TypedValue;
 import rest.sgx.model.GetBetweenResponse;
 import rest.sgx.model.SGXClientSumRequest;
+import rest.sgx.model.SGXConditionalUpdateRequest;
 import rest.sgx.model.SGXGetBetweenRequest;
 import rest.sgx.model.SGXResponse;
 import rest.utils.AdminSgxKeyLoader;
@@ -97,17 +98,7 @@ public class SGXServerResources implements SGXServerInterface {
     }
 
     @Override
-    public void compare(SGXClientSumRequest sgxClientRequest) {
-
-    }
-
-    @Override
-    public void set_conditional(SGXClientSumRequest sgxClientRequest) {
-
-    }
-
-    @Override
-    public void add_conditional(SGXClientSumRequest sgxClientRequest) {
+    public void compare(SGXConditionalUpdateRequest sgxClientRequest) {
 
     }
 }

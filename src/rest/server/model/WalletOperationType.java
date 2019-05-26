@@ -10,5 +10,6 @@ public enum WalletOperationType {
     GET_BALANCE,
     SUM,
     SET_BALANCE,
-    GET_BETWEEN
+    GET_BETWEEN,
+    CONDITIONAL_UPD
 }

@@ -4,6 +4,7 @@ import rest.sgx.model.SGXClientSumRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 
+import rest.sgx.model.SGXConditionalUpdateRequest;
 import rest.sgx.model.SGXGetBetweenRequest;
 import rest.sgx.model.SGXResponse;
 
@@ -23,20 +24,9 @@ public interface SGXServerInterface {
     SGXResponse getBetween(SGXGetBetweenRequest sgxClientRequest);
 
     @POST
-    @Path("/compare")
+    @Path("/conditional_upd")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    void compare(SGXClientSumRequest sgxClientRequest);
+    void compare(SGXConditionalUpdateRequest sgxClientRequest);
 
-    @POST
-    @Path("/set")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    void set_conditional(SGXClientSumRequest sgxClientRequest);
-
-    @POST
-    @Path("/add")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    void add_conditional(SGXClientSumRequest sgxClientRequest);
 }
