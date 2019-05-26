@@ -95,7 +95,7 @@ public class CreateHomoAddClient {
         }
     }
 
-    private static Key generateAES () {
+    public static Key generateAES () {
         try {
             KeyGenerator keyGen = KeyGenerator.getInstance("AES");
             keyGen.init(256); // for example

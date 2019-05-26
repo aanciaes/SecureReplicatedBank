@@ -6,6 +6,7 @@ import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import com.sun.xml.internal.bind.v2.TODO;
 import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.PaillierKey;
@@ -26,11 +27,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.*;
-import rest.sgx.model.SGXClientSumRequest;
-import rest.sgx.model.SGXGetBetweenRequest;
-import rest.sgx.model.SGXResponse;
-import rest.sgx.model.TypedKey;
+import rest.sgx.model.*;
 import rest.utils.AdminSgxKeyLoader;
+import rest.utils.Updates;
 import rest.utils.Utils;
 
 import javax.ws.rs.client.Client;
@@ -425,18 +424,18 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     private ReplicaResponse conditional_upd(ClientConditionalUpd clientConditionalUpd, long nonce, WalletOperationType operationType) {
         if (db.containsKey(clientConditionalUpd.getPublicKey())) {
             db.forEach((String key, TypedValue tv) ->{
-                switch (clientConditionalUpd.getCondition()){
-                    case 0:
-                        conditional_upd_equal(clientConditionalUpd);
-                    case 1:
-                        conditional_upd_different(clientConditionalUpd);
-                    case 2:
-                        //conditional_upd_greater(clientConditionalUpd);
-                    case 3:
+                switch (tv.getType()){
+                    case HOMO_ADD:
+                        conditional_upd_homoAdd(clientConditionalUpd);
+                    case HOMO_OPE_INT:
+                        conditional_upd_homoOpeInt(clientConditionalUpd);
+                    case WALLET:
+                        conditional_upd_wallet(clientConditionalUpd, key, tv);
+                    //case 3:
                         //conditional_upd_greaterOrEqual(clientConditionalUpd);
-                    case 4:
+                    //case 4:
                         //conditional_upd_lower(clientConditionalUpd);
-                    case 5:
+                    //case 5:
                         //conditional_upd_lowerOrEqual(clientConditionalUpd);
                     default:
                 }
@@ -446,17 +445,63 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
         return new ReplicaResponse(400, "Account does not exist: " + clientConditionalUpd.getPublicKey(), null, 0L, null);
     }
-
-    private void conditional_upd_different(ClientConditionalUpd clientConditionalUpd) {
+    private void conditional_upd_homoAdd(ClientConditionalUpd clientConditionalUpd) {
 
 
     }
 
-    private void conditional_upd_equal(ClientConditionalUpd clientConditionalUpd) {
-        Map<String, TypedValue> filtered = new HashMap<>();
-        db.forEach((String key, TypedValue tv) -> {
+    private void conditional_upd_homoOpeInt(ClientConditionalUpd clientConditionalUpd) {
 
-        });
+
+    }
+
+
+    private void conditional_upd_equal(ClientConditionalUpd clientConditionalUpd, Double checkBalance, String key, TypedValue tv) {
+        if(checkBalance == Double.parseDouble(tv.getAmount())){
+            List<Updates> updatesList = clientConditionalUpd.getUpdatesList();
+            for(int i = 0; i< updatesList.size(); i++){
+                if(updatesList.get(i).getOp().equals("add")){
+                    conditional_upd_walletAdd(updatesList.get(i), key);
+                }else if(updatesList.get(i).getOp().equals("set")){
+                    conditional_upd_walletSet(updatesList.get(i), key);
+                }else{
+                    //Retornar operacao nao reconhecida
+                }
+            }
+        }
+    }
+
+    private void conditional_upd_walletSet(Updates updates, String key) {
+        ClientCreateRequest clientCreateRequest= new ClientCreateRequest();
+        clientCreateRequest.setToPubKey(key);
+        TypedValue newTv = new TypedValue();
+        newTv.setAmount(updates.getValue());
+        clientCreateRequest.setTypedValue(newTv);
+        setBalance(clientCreateRequest, 0L, WalletOperationType.SET_BALANCE);
+
+    }
+
+    private void conditional_upd_walletAdd(Updates updates, String key) {
+        ClientSumRequest clientSumRequest = new ClientSumRequest();
+        clientSumRequest.setUserIdentifier(key);
+        TypedValue newTv = new TypedValue();
+        newTv.setAmount(updates.getValue());
+        newTv.setType(DataType.WALLET);
+        clientSumRequest.setTypedValue(newTv);
+        sum(clientSumRequest, 0L, WalletOperationType.SUM);
+    }
+
+    private void conditional_upd_wallet(ClientConditionalUpd clientConditionalUpd, String key, TypedValue tv) {
+        Map<String, TypedValue> filtered = new HashMap<>();
+        Double checkBalance = Double.parseDouble(clientConditionalUpd.getTypedValue().getAmount());
+        switch (clientConditionalUpd.getCondition()){
+            case 0:
+                conditional_upd_equal(clientConditionalUpd, checkBalance, key, tv);
+                break;
+            //CAse restantes operaçoes
+
+        }
+
     }
 
     // For debug purposes only. Return all users of the current server directly

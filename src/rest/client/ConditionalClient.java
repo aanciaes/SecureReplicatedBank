@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.client.get.GetBalanceClient;
 import rest.server.model.*;
+import rest.utils.AdminSgxKeyLoader;
 import rest.utils.Updates;
 import rest.utils.Utils;
 
@@ -19,10 +20,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.math.BigInteger;
 import java.net.URLEncoder;
+import java.security.Key;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Base64;
 import java.util.List;
+
+import static rest.client.create.CreateHomoAddClient.generateAES;
 
 public class ConditionalClient {
 
@@ -35,24 +39,35 @@ public class ConditionalClient {
 
             PaillierKey paillierKey = null;
             HomoOpeInt homoOpeInt = null;
-
+            TypedValue clientTv = new TypedValue(amount, dataType, null, null);
+            Key symKey = generateAES();
             if (dataType == DataType.HOMO_ADD) {
                 paillierKey = (PaillierKey) HelpSerial.fromString(key);
                 amount = HomoAdd.encrypt(new BigInteger(amount), paillierKey).toString();
                 clientRequest.setNsquare(paillierKey.getNsquare().toString());
+
+                byte [] encryptedHomoAddKeyBytes = Utils.encryptMessage("AES", "SunJCE", symKey, key.getBytes());
+                String encryptedPallierKey = Base64.getEncoder().encodeToString(encryptedHomoAddKeyBytes);
+
+                byte[] encryptedSymKeyBytes = Utils.encryptMessage("RSA", "SunJCE", AdminSgxKeyLoader.loadPublicKey("sgxPublicKey.pem"), symKey.getEncoded());
+                String encryptedSymKey = Base64.getEncoder().encodeToString(encryptedSymKeyBytes);
+
+                clientTv = new TypedValue (amount, dataType, encryptedPallierKey, encryptedSymKey);
             }else if(dataType == DataType.HOMO_OPE_INT){
                 homoOpeInt = new HomoOpeInt(key);
                 amount = ((Long) homoOpeInt.encrypt(Integer.parseInt(amount))).toString();
+                byte[] encryptedSymKeyBytes = Utils.encryptMessage("RSA", "SunJCE", AdminSgxKeyLoader.loadPublicKey("sgxPublicKey.pem"), symKey.getEncoded());
+                String encryptedSymKey = Base64.getEncoder().encodeToString(encryptedSymKeyBytes);
+                clientTv = new TypedValue (amount, dataType, null, encryptedSymKey);
             }
 
-            TypedValue clientTv = new TypedValue (amount, dataType);
             clientRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(clientRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(kp.getPrivate(), hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", kp.getPrivate(), hashedMessage);
 
             clientRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 

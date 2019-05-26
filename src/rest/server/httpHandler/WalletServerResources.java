@@ -347,11 +347,11 @@ public class WalletServerResources implements WalletServer {
         }
     }
 
-    @override
+    @Override
     public ClientResponse conditional_upd(HttpHeaders headers, ClientConditionalUpd clientSetRequest){
         try {
             byte[] hashMessage = generateHash(clientSetRequest.getSerializeMessage().getBytes());
-            PublicKey fromPublicKey = generatePublicKeyFromString(clientSetRequest.getToPubKey());
+            PublicKey fromPublicKey = generatePublicKeyFromString(clientSetRequest.getToPublicKey());
             byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(clientSetRequest.getSignature()));
 
             if (decryptedHash == null) {
