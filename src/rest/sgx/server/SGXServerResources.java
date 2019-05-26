@@ -16,11 +16,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.TypedValue;
-import rest.sgx.model.GetBetweenResponse;
-import rest.sgx.model.SGXClientSumRequest;
-import rest.sgx.model.SGXConditionalUpdateRequest;
-import rest.sgx.model.SGXGetBetweenRequest;
-import rest.sgx.model.SGXResponse;
+import rest.sgx.model.*;
 import rest.utils.AdminSgxKeyLoader;
 import rest.utils.Utils;
 
@@ -108,6 +104,11 @@ public class SGXServerResources implements SGXServerInterface {
             default:
                 return false;
         }
+    }
+
+    @Override
+    public synchronized SGXResponse applyConditionUpdate (SGXApplyUpdateRequest sgxApplyUpdateRequest) {
+        return new SGXResponse(500, "Not implemented yet");
     }
 
     private BigInteger getHomoAddBalance (TypedValue typedValue) {

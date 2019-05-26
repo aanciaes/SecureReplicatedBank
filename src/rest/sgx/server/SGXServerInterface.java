@@ -1,12 +1,9 @@
 package rest.sgx.server;
 
-import rest.sgx.model.SGXClientSumRequest;
+import rest.sgx.model.*;
+
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-
-import rest.sgx.model.SGXConditionalUpdateRequest;
-import rest.sgx.model.SGXGetBetweenRequest;
-import rest.sgx.model.SGXResponse;
 
 @Path("/sgx")
 public interface SGXServerInterface {
@@ -28,4 +25,10 @@ public interface SGXServerInterface {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     boolean compare(SGXConditionalUpdateRequest sgxClientRequest);
+
+    @POST
+    @Path("/applyoConditionUpdate")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    SGXResponse applyConditionUpdate (SGXApplyUpdateRequest sgxApplyUpdateRequest);
 }

@@ -2,16 +2,16 @@ package rest.utils;
 
 import java.io.Serializable;
 
-public class Updates implements Serializable {
+public class Update implements Serializable {
 
     private int op;
     private String updKey;
     private String value;
 
-    public Updates() {
+    public Update() {
     }
 
-    public Updates(int op, String updKey, String value) {
+    public Update(int op, String updKey, String value) {
         this.op = op;
         this.updKey = updKey;
         this.value = value;

@@ -45,6 +45,7 @@ import rest.sgx.model.SGXConditionalUpdateRequest;
 import rest.sgx.model.SGXGetBetweenRequest;
 import rest.sgx.model.SGXResponse;
 import rest.sgx.model.TypedKey;
+import rest.utils.Update;
 import rest.utils.Utils;
 
 /**
@@ -432,10 +433,9 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
             if (checkCondition(db.get(clientConditionalUpd.getCondKey()), clientConditionalUpd.getCondValue(), clientConditionalUpd.getCondition())) {
                 //TODO
-                System.out.println("condition holds");
-                return new ReplicaResponse(200, "Condition holds", null, (nonce + 1), null);
+                applyUpdates(clientConditionalUpd.getUpdatesList());
+                return new ReplicaResponse(200, "Condition holds, Updates Performed", null, (nonce + 1), null);
             } else {
-                System.out.println("condition does not hold");
                 return new ReplicaResponse(412, "Pre condition failed", null, 0L, null);
             }
 
@@ -510,6 +510,37 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
         return response.readEntity(Boolean.class);
+    }
+
+    private void applyUpdates (List<Update> updates) {
+        for(Update update: updates) {
+            TypedValue tv = db.get(update.getUpdKey());
+
+            if (tv.getType() == DataType.WALLET){
+                applyUpdateLocally(update);
+            } else {
+                applyUpdateOnSecureSgx();
+            }
+        }
+    }
+
+    // Only for wallet datatype
+    private void applyUpdateLocally (Update update) {
+        switch (update.getOp()){
+            case 0:
+                db.get(update.getUpdKey()).setAmount(update.getValue());
+                break;
+            case 1:
+                TypedValue tv = db.get(update.getUpdKey());
+                tv.setAmountAsDouble((tv.getAmountAsDouble() + Double.parseDouble(update.getValue())));
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void applyUpdateOnSecureSgx () {
+
     }
 
 

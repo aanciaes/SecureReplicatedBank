@@ -10,14 +10,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.client.get.GetBalanceClient;
 import rest.server.model.ClientConditionalUpd;
-import rest.utils.Updates;
+import rest.utils.Update;
 import rest.utils.Utils;
 
 public class ConditionalClient {
 
     private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
 
-    public static void conditional_upd(WebTarget target, int faults, String condKey, Double condValue, List<Updates> conditionalUpdates, int condition) {
+    public static void conditional_upd(WebTarget target, int faults, String condKey, Double condValue, List<Update> conditionalUpdates, int condition) {
         try {
             long nonce = Utils.generateNonce();
             ClientConditionalUpd clientRequest = new ClientConditionalUpd(condKey, condValue, conditionalUpdates, condition, nonce);

@@ -1,6 +1,5 @@
 package rest.client.create;
 
-import hlib.hj.mlib.HelpSerial;
 import java.net.URI;
 import java.security.KeyPair;
 import java.util.ArrayList;
@@ -16,13 +15,8 @@ import hlib.hj.mlib.PaillierKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.client.ConditionalClient;
-import rest.client.get.GetBalanceClient;
-import rest.client.get.GetBetweenClient;
-import rest.client.set.SetBalanceClient;
-import rest.client.sum.SumClient;
-import rest.server.model.DataType;
 import rest.utils.AdminSgxKeyLoader;
-import rest.utils.Updates;
+import rest.utils.Update;
 import rest.utils.Utils;
 
 /**
@@ -50,9 +44,9 @@ public class CreateClient {
             PaillierKey pk = HomoAdd.generateKey();
             String opeIntKey = "anotherkey";
 
-            //CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "3000");
+            CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "3000");
             //CreateHomoAddClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "5000", pk);
-            CreateHomoOpeIntClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", opeIntKey);
+            //CreateHomoOpeIntClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", opeIntKey);
 
             //SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.HOMO_OPE_INT);
 
@@ -70,9 +64,9 @@ public class CreateClient {
             //SetBalanceClient.setBalance(target, faults, kp, HelpSerial.toString(pk), "4000", DataType.HOMO_ADD);
             //GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
 
-            List<Updates> updates = new ArrayList<>();
-            updates.add(new Updates(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
-            updates.add(new Updates(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
+            List<Update> updates = new ArrayList<>();
+            updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
+            updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
 
             //0 -> db[cond_key] = cond_value
             //1 -> db[cond_key] != cond_value
@@ -81,7 +75,7 @@ public class CreateClient {
             // 4 -> db[cond_key] < cond_value
             // 5 -> db[cond_key] <= cond_value
             // ir buscar todos os clientes que holdem a condicao passada como variavel e aplicar a lista de updates
-            ConditionalClient.conditional_upd(target, faults, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), 10000.0, updates, 4);
+            ConditionalClient.conditional_upd(target, faults, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), 3000.0, updates, 0);
         } catch (Exception e) {
             e.printStackTrace();
         }

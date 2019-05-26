@@ -3,20 +3,20 @@ package rest.server.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import rest.utils.Updates;
+import rest.utils.Update;
 
 public class ClientConditionalUpd implements Serializable {
 
     private String condKey;
     private Double condValue;
-    private List<Updates> updatesList = new ArrayList<>();
+    private List<Update> updatesList = new ArrayList<>();
     private int condition;
     private Long nonce;
 
     public ClientConditionalUpd() {
     }
 
-    public ClientConditionalUpd(String condKey, Double condValue, List<Updates> updatesList, int condition, Long nonce) {
+    public ClientConditionalUpd(String condKey, Double condValue, List<Update> updatesList, int condition, Long nonce) {
         this.condKey = condKey;
         this.condValue = condValue;
         this.nonce = nonce;
@@ -48,11 +48,11 @@ public class ClientConditionalUpd implements Serializable {
         this.nonce = nonce;
     }
 
-    public List<Updates> getUpdatesList() {
+    public List<Update> getUpdatesList() {
         return updatesList;
     }
 
-    public void setUpdatesList(List<Updates> updatesList) {
+    public void setUpdatesList(List<Update> updatesList) {
         this.updatesList = updatesList;
     }
 
