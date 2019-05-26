@@ -1,7 +1,6 @@
 package rest.sgx.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.HomoOpeInt;
@@ -17,7 +16,11 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.TypedValue;
-import rest.sgx.model.*;
+import rest.sgx.model.GetBetweenResponse;
+import rest.sgx.model.SGXClientSumRequest;
+import rest.sgx.model.SGXConditionalUpdateRequest;
+import rest.sgx.model.SGXGetBetweenRequest;
+import rest.sgx.model.SGXResponse;
 import rest.utils.AdminSgxKeyLoader;
 import rest.utils.Utils;
 
@@ -106,30 +109,7 @@ public class SGXServerResources implements SGXServerInterface {
         }
     }
 
-    @Override
-    public synchronized SGXResponse applyConditionUpdate (SGXApplyUpdateRequest sgxApplyUpdateRequest) {
-        TypedValue tv = sgxApplyUpdateRequest.getTypedValue();
-
-        switch (tv.getType()){
-            case HOMO_ADD:
-                BigInteger homoAddValue = getHomoAddBalance(tv);
-                BigInteger newBalance = applyHomoAddUpdate(homoAddValue, sgxApplyUpdateRequest.getValue(), sgxApplyUpdateRequest.getOperation());
-                System.out.println("new balance: " + newBalance );
-                BigInteger newBalanceEncrypted = encryptHomoAddValue (newBalance, tv);
-                System.out.println("enc new balance: " + newBalanceEncrypted );
-
-                return new SGXResponse(200, newBalanceEncrypted.toString());
-            case HOMO_OPE_INT:
-                Integer homoOppValue = getHomoOpeIntBalance(tv);
-                break;
-                default:
-                    break;
-        }
-
-        return new SGXResponse(500, "Not implemented yet");
-    }
-
-    private BigInteger getHomoAddBalance (TypedValue typedValue) {
+    private BigInteger getHomoAddBalance(TypedValue typedValue) {
         try {
             PrivateKey privateKey = AdminSgxKeyLoader.loadPrivateKey("sgxPrivateKey.pem");
 
@@ -144,13 +124,13 @@ public class SGXServerResources implements SGXServerInterface {
             PaillierKey pk = (PaillierKey) HelpSerial.fromString(new String(decryptedPaillierKeyBytes));
 
             return HomoAdd.decrypt(typedValue.getAmountAsBigInteger(), pk);
-        } catch (Exception e ) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    private Integer getHomoOpeIntBalance (TypedValue typedValue) {
+    private Integer getHomoOpeIntBalance(TypedValue typedValue) {
         try {
             PrivateKey privateKey = AdminSgxKeyLoader.loadPrivateKey("sgxPrivateKey.pem");
             byte[] keyBytes = Base64.getDecoder().decode(typedValue.getEncodedHomoKey());
@@ -165,7 +145,7 @@ public class SGXServerResources implements SGXServerInterface {
         }
     }
 
-    private boolean checkCondition (int balance, Double condValue, int condition) {
+    private boolean checkCondition(int balance, Double condValue, int condition) {
         switch (condition) {
             case 0:
                 return balance == condValue;
@@ -181,44 +161,6 @@ public class SGXServerResources implements SGXServerInterface {
                 return balance <= condValue;
             default:
                 return false;
-        }
-    }
-
-    private BigInteger applyHomoAddUpdate (BigInteger currentBalance, String condValue, int operation ) {
-        switch (operation){
-            case 0:
-                return new BigInteger(condValue);
-            case 1:
-                return currentBalance.add(new BigInteger(condValue));
-            default:
-                return null;
-        }
-    }
-
-    private BigInteger encryptHomoAddValue (BigInteger newValue, TypedValue typedValue) {
-        try {
-            System.out.println("amount: " + newValue);
-            PrivateKey privateKey = AdminSgxKeyLoader.loadPrivateKey("sgxPrivateKey.pem");
-
-            byte[] symKey = Base64.getDecoder().decode(typedValue.getEncodedSymKey());
-            byte[] paillierKey = Base64.getDecoder().decode(typedValue.getEncodedHomoKey());
-
-            byte[] decryptedSymKey = Utils.decrypt("RSA", "SunJCE", privateKey, symKey);
-
-            SecretKey secretKey = new SecretKeySpec(decryptedSymKey, 0, decryptedSymKey.length, "AES");
-            byte[] decryptedPaillierKeyBytes = Utils.decrypt("AES", "SunJCE", secretKey, paillierKey);
-
-            PaillierKey pk = (PaillierKey) HelpSerial.fromString(new String(decryptedPaillierKeyBytes));
-
-            BigInteger b = HomoAdd.encrypt(newValue, pk);
-            BigInteger asd = HomoAdd.encrypt(new BigInteger("400"), pk);
-
-            System.out.println("asd: " + asd);
-
-            return b;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
         }
     }
 }

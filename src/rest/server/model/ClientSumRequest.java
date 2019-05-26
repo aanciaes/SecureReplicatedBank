@@ -1,7 +1,6 @@
 package rest.server.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.io.Serializable;
 
 public class ClientSumRequest implements Serializable {

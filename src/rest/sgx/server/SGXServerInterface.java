@@ -25,10 +25,4 @@ public interface SGXServerInterface {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     boolean compare(SGXConditionalUpdateRequest sgxClientRequest);
-
-    @POST
-    @Path("/applyConditionUpdate")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    SGXResponse applyConditionUpdate (SGXApplyUpdateRequest sgxApplyUpdateRequest);
 }
