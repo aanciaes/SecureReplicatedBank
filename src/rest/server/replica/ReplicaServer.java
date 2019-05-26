@@ -13,19 +13,14 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import rest.server.model.ClientCreateRequest;
-import rest.server.model.ClientSumRequest;
-import rest.server.model.ClientTransferRequest;
-import rest.server.model.DataType;
-import rest.server.model.ReplicaResponse;
-import rest.server.model.TypedValue;
-import rest.server.model.WalletOperationType;
+import rest.server.model.*;
 import rest.sgx.model.SGXClientSumRequest;
 import rest.sgx.model.SGXGetBetweenRequest;
 import rest.sgx.model.SGXResponse;
@@ -116,6 +111,14 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     long nonceSet = (Long) objIn.readObject();
 
                     appRes = setBalance(cliSetRequest, nonceSet, reqType);
+                    objOut.writeObject(appRes);
+
+                    break;
+                case CONDITIONAL_UPD:
+                    ClientConditionalUpd clientConditionalUpd = (ClientConditionalUpd) objIn.readObject();
+                    long nonceCond = (Long) objIn.readObject();
+
+                    appRes = conditional_upd(clientConditionalUpd, nonceCond, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -416,6 +419,43 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         } else {
             return new ReplicaResponse(400, "Account does not exist: " + sumRequest.getUserIdentifier(), null, 0L, null);
         }
+    }
+
+    private ReplicaResponse conditional_upd(ClientConditionalUpd clientConditionalUpd, long nonce, WalletOperationType operationType) {
+        if (db.containsKey(clientConditionalUpd.getPublicKey())) {
+            db.forEach((String key, TypedValue tv) ->{
+                switch (clientConditionalUpd.getCondition()){
+                    case 0:
+                        conditional_upd_equal(clientConditionalUpd);
+                    case 1:
+                        conditional_upd_different(clientConditionalUpd);
+                    case 2:
+                        //conditional_upd_greater(clientConditionalUpd);
+                    case 3:
+                        //conditional_upd_greaterOrEqual(clientConditionalUpd);
+                    case 4:
+                        //conditional_upd_lower(clientConditionalUpd);
+                    case 5:
+                        //conditional_upd_lowerOrEqual(clientConditionalUpd);
+                    default:
+                }
+            });
+        } else {
+            return new ReplicaResponse(400, "Account does not exist: " + clientConditionalUpd.getPublicKey(), null, 0L, null);
+        }
+        return new ReplicaResponse(400, "Account does not exist: " + clientConditionalUpd.getPublicKey(), null, 0L, null);
+    }
+
+    private void conditional_upd_different(ClientConditionalUpd clientConditionalUpd) {
+
+
+    }
+
+    private void conditional_upd_equal(ClientConditionalUpd clientConditionalUpd) {
+        Map<String, TypedValue> filtered = new HashMap<>();
+        db.forEach((String key, TypedValue tv) -> {
+
+        });
     }
 
     // For debug purposes only. Return all users of the current server directly

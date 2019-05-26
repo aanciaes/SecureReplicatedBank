@@ -79,7 +79,7 @@ public class CreateClient {
             // 4 -> db[cond_key] < cond_value
             // 5 -> db[cond_key] <= cond_value
             // ir buscar todos os clientes que holdem a condicao passada como variavel e aplicar a lista de updates
-            ConditionalClient.conditional_upd( target, faults, kp.getPublic(), "200", "0", updates, DataType.WALLET);
+            ConditionalClient.conditional_upd( target, faults, kp, "200", "0", updates, DataType.WALLET, null);
         } catch (Exception e) {
             e.printStackTrace();
         }

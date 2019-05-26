@@ -35,16 +35,9 @@ import javax.ws.rs.core.*;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import rest.server.model.*;
 import rest.utils.Utils;
 import rest.utils.AdminSgxKeyLoader;
-import rest.server.model.ClientCreateRequest;
-import rest.server.model.ClientResponse;
-import rest.server.model.ClientSumRequest;
-import rest.server.model.ClientTransferRequest;
-import rest.server.model.CustomExtractor;
-import rest.server.model.DataType;
-import rest.server.model.ReplicaResponse;
-import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
 
 /**
@@ -348,6 +341,47 @@ public class WalletServerResources implements WalletServer {
             e.printStackTrace();
             throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @override
+    public ClientResponse conditional_upd(HttpHeaders headers, ClientConditionalUpd clientSetRequest){
+        try {
+            byte[] hashMessage = generateHash(clientSetRequest.getSerializeMessage().getBytes());
+            PublicKey fromPublicKey = generatePublicKeyFromString(clientSetRequest.getToPubKey());
+            byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(clientSetRequest.getSignature()));
+
+            if (decryptedHash == null) {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+            if (Arrays.equals(hashMessage, decryptedHash)) {
+
+                Long nonce = getNonceFromHeader(headers);
+                byte[] reply = invokeOp(
+                        true,
+                        WalletOperationType.CONDITIONAL_UPD,
+                        clientSetRequest,
+                        nonce
+                );
+
+                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+                ObjectInput objIn = new ObjectInputStream(byteIn);
+
+                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+                if (rs.getStatusCode() != 200) {
+                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+                } else {
+                    return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages()));
+                }
+            } else {
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            logger.error(e.getMessage(), e);
+            e.printStackTrace();
+            throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
     }
 
     /**
