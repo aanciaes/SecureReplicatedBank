@@ -1,9 +1,8 @@
 package rest.serverController.client;
 
 import com.google.gson.Gson;
-import org.omg.CORBA.INTERNAL;
-import rest.client.AdminKeyLoader;
-import rest.client.Utils;
+import rest.utils.AdminSgxKeyLoader;
+import rest.utils.Utils;
 import rest.serverController.model.AdminServerRequest;
 
 import javax.ws.rs.client.Client;
@@ -15,8 +14,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ManagerClient {
 
@@ -38,7 +35,7 @@ public class ManagerClient {
             adminRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(adminRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(AdminKeyLoader.loadPrivateKey(), hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), hashedMessage);
             adminRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 
             String json = gson.toJson(adminRequest);

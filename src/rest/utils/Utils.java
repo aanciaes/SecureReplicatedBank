@@ -1,4 +1,4 @@
-package rest.client;
+package rest.utils;
 
 import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.util.KeyLoader;
@@ -11,13 +11,7 @@ import rest.server.model.WalletOperationType;
 import javax.crypto.Cipher;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Signature;
+import java.security.*;
 import java.util.Base64;
 
 public class Utils {
@@ -78,9 +72,9 @@ public class Utils {
      * @param message data to encrypt
      * @return Encrypted data
      */
-    public static byte[] encryptMessage(Key key, byte[] message) {
+    public static byte[] encryptMessage(String alg, String provider, Key key, byte[] message) {
         try {
-            Cipher c = Cipher.getInstance("RSA", "SunJCE");
+            Cipher c = Cipher.getInstance(alg, provider);
             c.init(Cipher.ENCRYPT_MODE, key);
             return c.doFinal(message);
         } catch (Exception e) {
@@ -148,6 +142,16 @@ public class Utils {
         } catch (Exception e) {
             logger.warn(e.getMessage());
             return false;
+        }
+    }
+
+    public static byte[] decrypt(String alg, String provider, Key key, byte[] message) {
+        try {
+            Cipher c = Cipher.getInstance(alg, provider);
+            c.init(Cipher.DECRYPT_MODE, key);
+            return c.doFinal(message);
+        } catch (Exception e) {
+            return new byte[0];
         }
     }
 

@@ -7,7 +7,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
-import rest.server.model.DataType;
+import rest.client.create.CreateClient;
+import rest.client.create.CreateWalletClient;
+import rest.client.get.GetBalanceClient;
+import rest.client.sum.TransferClient;
+import rest.utils.AdminSgxKeyLoader;
+import rest.utils.Utils;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -30,7 +35,7 @@ public class ClientMain {
     public static void main(String[] args) throws Exception {
 
         //Configuring standard log levels
-        Configurator.setLevel(AddMoneyClient.class.getName(), Level.INFO);
+        Configurator.setLevel(CreateClient.class.getName(), Level.INFO);
         Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
         Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
         Configurator.setLevel(Utils.class.getName(), Level.INFO);
@@ -44,14 +49,14 @@ public class ClientMain {
         }
 
         if (cmd.hasOption("d")) {
-            Configurator.setLevel(AddMoneyClient.class.getName(), Level.DEBUG);
+            Configurator.setLevel(CreateClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(GetBalanceClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(TransferClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(Utils.class.getName(), Level.DEBUG);
         }
 
         if (cmd.hasOption('t')) {
-            Configurator.setLevel(AddMoneyClient.class.getName(), Level.OFF);
+            Configurator.setLevel(CreateClient.class.getName(), Level.OFF);
             Configurator.setLevel(GetBalanceClient.class.getName(), Level.OFF);
             Configurator.setLevel(TransferClient.class.getName(), Level.OFF);
             Configurator.setLevel(Utils.class.getName(), Level.OFF);
@@ -69,7 +74,7 @@ public class ClientMain {
             try {
                 KeyPair kp = Utils.generateNewKeyPair(1024);
                 users.add(kp);
-                AddMoneyWalletClient.addMoney(target, faults, AdminKeyLoader.loadPrivateKey(), kp.getPublic(), "1000.0");
+                CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000.0");
                 nUsers++;
             } catch (Exception e) {
                 e.printStackTrace();

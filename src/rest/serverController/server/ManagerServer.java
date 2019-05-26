@@ -1,6 +1,5 @@
 package rest.serverController.server;
 
-import rest.server.model.ClientResponse;
 import rest.serverController.model.AdminServerRequest;
 
 import javax.ws.rs.*;

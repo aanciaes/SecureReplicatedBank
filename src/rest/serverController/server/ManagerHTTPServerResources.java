@@ -1,20 +1,12 @@
 package rest.serverController.server;
 
-import rest.client.AdminKeyLoader;
-import rest.server.model.*;
+import rest.utils.AdminSgxKeyLoader;
 import rest.serverController.model.AdminServerRequest;
 
 import javax.crypto.Cipher;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -88,7 +80,7 @@ public class ManagerHTTPServerResources implements ManagerServer {
     private boolean verifyIntegrity(AdminServerRequest adminServerRequest) {
         try {
             byte[] hashMessage = generateHash(adminServerRequest.getSerializeMessage().getBytes());
-            byte[] decryptedHash = decryptRequest(AdminKeyLoader.loadPublicKey(), Base64.getDecoder().decode(adminServerRequest.getSignature()));
+            byte[] decryptedHash = decryptRequest(AdminSgxKeyLoader.loadPublicKey("adminPublicKey"), Base64.getDecoder().decode(adminServerRequest.getSignature()));
 
             // Could not decrypt hash from message
             if (decryptedHash == null) {

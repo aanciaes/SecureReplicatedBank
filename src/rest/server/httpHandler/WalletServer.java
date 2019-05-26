@@ -1,9 +1,6 @@
 package rest.server.httpHandler;
 
-import rest.server.model.ClientAddMoneyRequest;
-import rest.server.model.ClientResponse;
-import rest.server.model.ClientSumRequest;
-import rest.server.model.ClientTransferRequest;
+import rest.server.model.*;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -15,7 +12,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import rest.server.model.DataType;
 
 /**
  * Wallet Server API
@@ -49,7 +45,15 @@ public interface WalletServer {
     @GET
     @Path("/getbetween")
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse getBetween(@Context HttpHeaders headers, @QueryParam("data_type") DataType dataType, @QueryParam("key_prf") String keyPrefix, @QueryParam("lowest") Long lowest, @QueryParam("highest") Long highest);
+    ClientResponse getBetween(
+            @Context HttpHeaders headers,
+            @QueryParam("data_type") DataType dataType,
+            @QueryParam("key_prf") String keyPrefix,
+            @QueryParam("lowest") Long lowest,
+            @QueryParam("highest") Long highest,
+            @QueryParam("paillier_key") String paillierKey,
+            @QueryParam("sym_key") String symKey
+    );
 
     /**
      * Generates money for a user
@@ -60,10 +64,10 @@ public interface WalletServer {
      * @return Client response with the new balance of the user and with all replica responses
      */
     @POST
-    @Path("/generate")
+    @Path("/create")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse generateMoney(@Context HttpHeaders headers, ClientAddMoneyRequest cliRequest);
+    ClientResponse createAccount(@Context HttpHeaders headers, ClientCreateRequest cliRequest);
 
     /**
      * Transfers money from one user to another
@@ -88,5 +92,11 @@ public interface WalletServer {
     @Path("/set")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse setBalance (@Context HttpHeaders headers, ClientAddMoneyRequest clientSetRequest);
+    ClientResponse setBalance (@Context HttpHeaders headers, ClientCreateRequest clientSetRequest);
+
+    @POST
+    @Path("/conditional_upd")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientResponse conditionalUpd(@Context HttpHeaders headers, ClientConditionalUpd clientSetRequest);
 }

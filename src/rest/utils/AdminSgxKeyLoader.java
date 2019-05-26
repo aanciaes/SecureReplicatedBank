@@ -1,4 +1,4 @@
-package rest.client;
+package rest.utils;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -17,16 +17,16 @@ import java.util.Base64;
  * Class that loads the specific keys for the admin user.
  * This keys can be changed on runtime since it is always reading from the file. No cache is made
  */
-public class AdminKeyLoader {
+public class AdminSgxKeyLoader {
 
-    public static PublicKey loadPublicKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        String key = readFromFile("adminKeys/adminPublicKey");
+    public static PublicKey loadPublicKey(String keyName) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        String key = readFromFile("adminKeys/" + keyName);
 
         return getPublicKeyFromString(key);
     }
 
-    public static PrivateKey loadPrivateKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        String key = readFromFile("adminKeys/adminPrivateKey");
+    public static PrivateKey loadPrivateKey(String keyName) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        String key = readFromFile("adminKeys/" + keyName);
 
         return getPrivateKeyFromString(key);
     }

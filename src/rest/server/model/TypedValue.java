@@ -8,13 +8,17 @@ public class TypedValue implements Serializable {
 
     private String amount;
     private DataType type;
+    private String encodedHomoKey;
+    private String encodedSymKey;
 
     public TypedValue() {
     }
 
-    public TypedValue(String amount, DataType type) {
+    public TypedValue(String amount, DataType type, String encodedHomoKey, String encodedSymKey) {
         this.amount = amount;
         this.type = type;
+        this.encodedHomoKey = encodedHomoKey;
+        this.encodedSymKey = encodedSymKey;
     }
 
     public String getAmount() {
@@ -56,5 +60,21 @@ public class TypedValue implements Serializable {
     @JsonIgnore
     public long getAmountAsLong() {
         return Long.parseLong(this.amount);
+    }
+
+    public String getEncodedHomoKey() {
+        return encodedHomoKey;
+    }
+
+    public void setEncodedHomoKey(String encodedHomoKey) {
+        this.encodedHomoKey = encodedHomoKey;
+    }
+
+    public String getEncodedSymKey() {
+        return encodedSymKey;
+    }
+
+    public void setEncodedSymKey(String encodedSymKey) {
+        this.encodedSymKey = encodedSymKey;
     }
 }

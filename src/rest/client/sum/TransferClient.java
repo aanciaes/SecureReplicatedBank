@@ -1,4 +1,4 @@
-package rest.client;
+package rest.client.sum;
 
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
@@ -8,6 +8,7 @@ import rest.server.model.ClientTransferRequest;
 import rest.server.model.DataType;
 import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
+import rest.utils.Utils;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -41,14 +42,14 @@ public class TransferClient {
             clientRequest.setFromPubKey(fromPubKString);
             clientRequest.setToPubKey(toKey);
 
-            TypedValue clientTypedValue = new TypedValue(amount.toString(), DataType.WALLET);
+            TypedValue clientTypedValue = new TypedValue(amount.toString(), DataType.WALLET, null, null);
             clientRequest.setAmount(clientTypedValue);
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(clientRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(kp.getPrivate(), hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", kp.getPrivate(), hashedMessage);
 
             clientRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 

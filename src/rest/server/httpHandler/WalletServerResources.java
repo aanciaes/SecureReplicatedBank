@@ -30,8 +30,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import rest.client.AdminKeyLoader;
-import rest.server.model.ClientAddMoneyRequest;
+import rest.server.model.ClientConditionalUpd;
+import rest.server.model.ClientCreateRequest;
 import rest.server.model.ClientResponse;
 import rest.server.model.ClientSumRequest;
 import rest.server.model.ClientTransferRequest;
@@ -40,6 +40,7 @@ import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
+import rest.utils.AdminSgxKeyLoader;
 
 /**
  * Restful resources of wallet server
@@ -120,16 +121,25 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse getBetween(HttpHeaders headers, DataType dataType, String keyPrefix, Long lowest, Long highest) {
+    public ClientResponse getBetween(HttpHeaders headers, DataType dataType, String keyPrefix, Long lowest, Long highest, String paillierKey, String symKey) {
         Long nonce = getNonceFromHeader(headers);
 
         try {
             if (lowest != null && highest != null) {
                 byte[] reply;
-                if (keyPrefix != null) {
-                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
+
+                if (DataType.HOMO_ADD == dataType) {
+                    if (keyPrefix != null) {
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
+                    } else {
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, nonce);
+                    }
                 } else {
-                    reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, nonce);
+                    if (keyPrefix != null) {
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
+                    } else {
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, nonce);
+                    }
                 }
 
                 // Reply from the replicas
@@ -148,7 +158,7 @@ public class WalletServerResources implements WalletServer {
             } else {
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             logger.error(e.getMessage(), e);
             throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
@@ -158,12 +168,12 @@ public class WalletServerResources implements WalletServer {
 
     @Override
     @SuppressWarnings("Duplicates")
-    public ClientResponse generateMoney(HttpHeaders headers, ClientAddMoneyRequest cliRequest) {
+    public ClientResponse createAccount(HttpHeaders headers, ClientCreateRequest cliRequest) {
         logger.info(String.format("generating: %s for user: %s ---", cliRequest.getTypedValue().getAmount(), cliRequest.getToPubKey()));
 
         try {
             byte[] hashMessage = generateHash(cliRequest.getSerializeMessage().getBytes());
-            PublicKey fromPublicKey = AdminKeyLoader.loadPublicKey(); // Only admin user can perform this operation
+            PublicKey fromPublicKey = AdminSgxKeyLoader.loadPublicKey("adminPublicKey"); // Only admin user can perform this operation
             byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(cliRequest.getSignature()));
 
             // Could not decrypt hash from message
@@ -178,7 +188,7 @@ public class WalletServerResources implements WalletServer {
             Long nonce = getNonceFromHeader(headers);
             byte[] reply = invokeOp(
                     true,
-                    WalletOperationType.GENERATE_MONEY,
+                    WalletOperationType.CREATE_ACCOUNT,
                     cliRequest,
                     nonce
             );
@@ -293,7 +303,7 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse setBalance(HttpHeaders headers, ClientAddMoneyRequest clientSetRequest) {
+    public ClientResponse setBalance(HttpHeaders headers, ClientCreateRequest clientSetRequest) {
         logger.info(String.format("set - encrypted amount: %s to user: %s", clientSetRequest.getTypedValue().getAmount(), clientSetRequest.getToPubKey()));
 
         try {
@@ -332,6 +342,37 @@ public class WalletServerResources implements WalletServer {
             e.printStackTrace();
             throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Override
+    public ClientResponse conditionalUpd(HttpHeaders headers, ClientConditionalUpd clientSetRequest) {
+        try {
+            Long nonce = getNonceFromHeader(headers);
+            byte[] reply = invokeOp(
+                    true,
+                    WalletOperationType.CONDITIONAL_UPD,
+                    clientSetRequest,
+                    nonce
+            );
+
+            ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+            ObjectInput objIn = new ObjectInputStream(byteIn);
+
+            ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
+
+            if (rs.getStatusCode() != 200) {
+                throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
+            } else {
+                return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages()));
+            }
+
+        } catch (IOException | ClassNotFoundException e) {
+            logger.error(e.getMessage(), e);
+            e.printStackTrace();
+            throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
     }
 
     /**
@@ -534,4 +575,5 @@ public class WalletServerResources implements WalletServer {
 
         return r.nextInt(high - low) + low;
     }
+
 }
