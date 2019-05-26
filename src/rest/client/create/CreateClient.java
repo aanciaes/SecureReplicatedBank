@@ -48,8 +48,8 @@ public class CreateClient {
             PaillierKey pk = HomoAdd.generateKey();
             String opeIntKey = "anotherkey";
 
-            //CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "3000");
-            //CreateHomoAddClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "5000", pk);
+            //CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000");
+            //CreateHomoAddClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", pk);
             CreateHomoOpeIntClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", opeIntKey);
 
             //SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.HOMO_OPE_INT);
@@ -69,9 +69,15 @@ public class CreateClient {
             //GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
 
             List<Update> updates = new ArrayList<>();
-            //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
-            //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), HomoAdd.encrypt(new BigInteger("10"), pk).toString()));
-            updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), String.valueOf(new HomoOpeInt(opeIntKey).encrypt(20))));
+
+            //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400", null));
+            //updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400", null));
+
+            //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), HomoAdd.encrypt(new BigInteger("10"), pk).toString(), pk.getNsquare().toString()));
+            //updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), HomoAdd.encrypt(new BigInteger("10"), pk).toString(), pk.getNsquare().toString()));
+
+            updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), String.valueOf(new HomoOpeInt(opeIntKey).encrypt(20)), null));
+            //updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), String.valueOf(new HomoOpeInt(opeIntKey).encrypt(20)), null));
 
             //0 -> db[cond_key] = cond_value
             //1 -> db[cond_key] != cond_value
@@ -82,6 +88,7 @@ public class CreateClient {
             // ir buscar todos os clientes que holdem a condicao passada como variavel e aplicar a lista de updates
             ConditionalClient.conditional_upd(target, faults, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), 1000.0, updates, 0);
 
+            //GetBalanceClient.getBalance(target, faults, kp, null);
             //GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
             GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
         } catch (Exception e) {

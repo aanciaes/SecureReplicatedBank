@@ -433,7 +433,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         if (db.containsKey(clientConditionalUpd.getCondKey())) {
 
             if (checkCondition(db.get(clientConditionalUpd.getCondKey()), clientConditionalUpd.getCondValue(), clientConditionalUpd.getCondition())) {
-                applyUpdates(clientConditionalUpd.getUpdatesList());
+                applyUpdates(clientConditionalUpd.getUpdatesList(), nonce);
                 return new ReplicaResponse(200, "Condition holds, Updates Performed", "Condition holds, Updates Performed", (nonce + 1), operationType);
             } else {
                 return new ReplicaResponse(412, "Pre condition failed", null, 0L, null);
@@ -493,7 +493,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         return response.readEntity(Boolean.class);
     }
 
-    private void applyUpdates(List<Update> updates) {
+    private void applyUpdates(List<Update> updates, Long nonce) {
         for (Update update : updates) {
             TypedValue tv = db.get(update.getUpdKey());
 
@@ -503,6 +503,12 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     break;
                 case 1:
                     ClientSumRequest clientSumRequest = new ClientSumRequest();
+                    clientSumRequest.setUserIdentifier(update.getUpdKey());
+                    clientSumRequest.setTypedValue(new TypedValue(update.getValue(), tv.getType(), tv.getEncodedHomoKey(), tv.getEncodedSymKey()));
+                    clientSumRequest.setNsquare(update.getNsquare());
+                    clientSumRequest.setNonce(nonce);
+
+                    sum(clientSumRequest, nonce, WalletOperationType.SUM);
                     break;
                 default:
                     break;

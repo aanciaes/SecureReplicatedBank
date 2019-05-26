@@ -8,13 +8,17 @@ public class Update implements Serializable {
     private String updKey;
     private String value;
 
+    // for sum operation, having the nsquare here saves a request do the sgx secure model
+    private String nsquare;
+
     public Update() {
     }
 
-    public Update(int op, String updKey, String value) {
+    public Update(int op, String updKey, String value, String nsquare) {
         this.op = op;
         this.updKey = updKey;
         this.value = value;
+        this.nsquare = nsquare;
     }
 
     public int getOp() {
@@ -39,5 +43,13 @@ public class Update implements Serializable {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getNsquare() {
+        return nsquare;
+    }
+
+    public void setNsquare(String nsquare) {
+        this.nsquare = nsquare;
     }
 }
