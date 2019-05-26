@@ -34,14 +34,14 @@ public class CreateWalletClient {
             ClientCreateRequest clientRequest = new ClientCreateRequest();
             clientRequest.setToPubKey(toPubkString);
 
-            TypedValue clientTv = new TypedValue (amount, DataType.WALLET);
+            TypedValue clientTv = new TypedValue (amount, DataType.WALLET, null, null);
             clientRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(clientRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(adminPrivateKey, hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", adminPrivateKey, hashedMessage);
 
             clientRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 

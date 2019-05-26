@@ -41,18 +41,17 @@ public class CreateHomoOpeIntClient {
             ClientCreateRequest clientRequest = new ClientCreateRequest();
             clientRequest.setToPubKey(toPubkString);
 
-            TypedValue clientTv = new TypedValue (amount, DataType.HOMO_OPE_INT);
-            clientRequest.setTypedValue(clientTv);
-
             // Set homo key encrypted with sgx public key
-            byte[] encyptedPallietKey = Utils.encryptMessage(AdminSgxKeyLoader.loadPublicKey("sgxPublicKey.pem"), homoKey.getBytes());
-            clientRequest.setEncryptedKey(Base64.getEncoder().encodeToString(encyptedPallietKey));
+            byte[] encyptedPallietKey = Utils.encryptMessage("RSA", "SunJCE", AdminSgxKeyLoader.loadPublicKey("sgxPublicKey.pem"), homoKey.getBytes());
+
+            TypedValue clientTv = new TypedValue (amount, DataType.HOMO_OPE_INT, Base64.getEncoder().encodeToString(encyptedPallietKey), null);
+            clientRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(clientRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(adminPrivateKey, hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", adminPrivateKey, hashedMessage);
 
             clientRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 

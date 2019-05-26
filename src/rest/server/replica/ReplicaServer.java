@@ -3,9 +3,12 @@ package rest.server.replica;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
+import hlib.hj.mlib.PaillierKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,6 +18,8 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
@@ -26,10 +31,12 @@ import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
+import rest.sgx.model.GetBetweenResponse;
 import rest.sgx.model.SGXClientSumRequest;
 import rest.sgx.model.SGXGetBetweenRequest;
 import rest.sgx.model.SGXResponse;
 import rest.sgx.model.TypedKey;
+import rest.utils.AdminSgxKeyLoader;
 import rest.utils.Utils;
 
 import javax.ws.rs.client.Client;
@@ -49,7 +56,6 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     private static Logger logger = LogManager.getLogger(ReplicaServer.class.getName());
 
     private Map<String, TypedValue> db = new ConcurrentHashMap<>();
-    private Map<String, TypedKey> sgxDb = new ConcurrentHashMap<>();
 
     private boolean unpredictable;
 
@@ -87,9 +93,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     long nonce = (Long) objIn.readObject();
 
                     appRes = createAccount(cliRequestCreate, nonce, reqType);
-                    if(appRes.getStatusCode() == 200){
-                        sgxDb.put(cliRequestCreate.getToPubKey(), new TypedKey(cliRequestCreate.getTypedValue().getType(), cliRequestCreate.getEncryptedKey()));
-                    }
+
                     objOut.writeObject(appRes);
                     break;
 
@@ -139,7 +143,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     }
 
     private ReplicaResponse setBalance(ClientCreateRequest cliSetRequest, long nonce, WalletOperationType operationType) {
-        db.put(cliSetRequest.getToPubKey(), new TypedValue(cliSetRequest.getTypedValue().getAmount(), cliSetRequest.getTypedValue().getType()));
+        //Wont change the keys associated with that value
+
+        TypedValue tv = db.get(cliSetRequest.getToPubKey());
+        tv.setAmount(cliSetRequest.getTypedValue().getAmount());
+
         return new ReplicaResponse(200, "Success", forceError(db.get(cliSetRequest.getToPubKey())), (nonce + 1), operationType);
     }
 
@@ -174,15 +182,10 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     if (hasKeyPrefix) {
                         keyPrefix = (String) objIn.readObject();
                     }
-                    boolean hasEncryptedKey = (boolean) objIn.readObject();
-                    String encrypedKey = null;
-                    if(hasEncryptedKey){
-                        encrypedKey = (String) objIn.readObject();
-                    }
 
                     long nonceGetBetween = (Long) objIn.readObject();
 
-                    appRes = getBetween(dataType, keyPrefix, lowest, highest, nonceGetBetween, reqType, encrypedKey);
+                    appRes = getBetween(dataType, keyPrefix, lowest, highest, nonceGetBetween, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -222,7 +225,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private ReplicaResponse getBetween(DataType dataType, String keyPrefix, Long lowest, Long highest, long nonce, WalletOperationType operationType, String encryptedKey) {
+    private ReplicaResponse getBetween(DataType dataType, String keyPrefix, Long lowest, Long highest, long nonce, WalletOperationType operationType) throws JsonProcessingException {
         List<String> rst = new ArrayList();
 
         if (dataType != DataType.HOMO_ADD) {
@@ -242,11 +245,10 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 }
             });
 
-            return new ReplicaResponse(200, "Success", rst, (nonce + 1), operationType);
+            return new ReplicaResponse(200, "Success", new ObjectMapper().writer().writeValueAsString(new GetBetweenResponse(rst)), (nonce + 1), operationType);
         } else {
-            //TODO: Implement with SGX
-            SGXResponse sgxResponse = sgxGetBetween(keyPrefix, BigInteger.valueOf(lowest), BigInteger.valueOf(highest), encryptedKey);
-            if(sgxResponse.getStatusCode() != 200){
+            SGXResponse sgxResponse = sgxGetBetween(keyPrefix, BigInteger.valueOf(lowest), BigInteger.valueOf(highest));
+            if(sgxResponse.getStatusCode() == 200){
                 return new ReplicaResponse(sgxResponse.getStatusCode(),"Success" , sgxResponse.getBody().toString(), (nonce + 1), operationType);
             }
             return new ReplicaResponse(400, "Not supported yet", null, (nonce + 1), operationType);
@@ -280,7 +282,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     private ReplicaResponse createWallet(ClientCreateRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
-            db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.WALLET));
+            db.put(cliRequest.getToPubKey(), cliRequest.getTypedValue());
 
             return new ReplicaResponse(200, "Success", cliRequest.getTypedValue().getAmount(), nonce + 1, operationType);
         }
@@ -308,7 +310,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     private ReplicaResponse createHomoAdd(ClientCreateRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
-            db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.HOMO_ADD));
+            db.put(cliRequest.getToPubKey(), cliRequest.getTypedValue());
 
             return new ReplicaResponse(200, "Success", cliRequest.getTypedValue().getAmount(), nonce + 1, operationType);
         } else {
@@ -328,7 +330,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
     private ReplicaResponse createHomoOpeInt(ClientCreateRequest cliRequest, Long nonce, WalletOperationType operationType) {
         // Creates new destination user, if not exists
         if (!db.containsKey(cliRequest.getToPubKey())) {
-            db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getTypedValue().getAmount(), DataType.HOMO_OPE_INT));
+            db.put(cliRequest.getToPubKey(), cliRequest.getTypedValue());
             return new ReplicaResponse(200, "Success", cliRequest.getTypedValue().getAmount(), nonce + 1, operationType);
         } else {
             //Homo Ope Int type cannot add money to an existing account
@@ -358,7 +360,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             if (amount > 0) {
                 if (db.get(cliRequest.getToPubKey()).getAmountAsDouble() - amount >= 0) {
                     if (!db.containsKey(cliRequest.getToPubKey())) {
-                        db.put(cliRequest.getToPubKey(), new TypedValue(cliRequest.getAmount(), DataType.WALLET));
+                        db.put(cliRequest.getToPubKey(), cliRequest.getTypedValue());
                         return new ReplicaResponse(200, "Success", db.get(cliRequest.getFromPubKey()), nonce + 1, operationType);
                     } else {
                         // Force error
@@ -461,18 +463,16 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private SGXResponse sgxGetBetween(String keyPrefix, BigInteger lowest, BigInteger highest, String encryptedKey){
-        Map<String, BigInteger> toSgx = new HashMap<>();
+    private SGXResponse sgxGetBetween(String keyPrefix, BigInteger lowest, BigInteger highest){
+        Map<String, TypedValue> toSgx = new HashMap<>();
 
         db.forEach((String key, TypedValue typedValue) -> {
             if(typedValue.getType() == DataType.HOMO_ADD && (keyPrefix == null ||  key.startsWith(keyPrefix))){
-                toSgx.put(key, typedValue.getAmountAsBigInteger());
+                toSgx.put(key, typedValue);
             }
         });
 
-        SGXGetBetweenRequest sgxRequest = new SGXGetBetweenRequest(toSgx, lowest, highest, encryptedKey);
-
-
+        SGXGetBetweenRequest sgxRequest = new SGXGetBetweenRequest(toSgx, lowest, highest);
 
         Client client = ClientBuilder.newBuilder()
                 .hostnameVerifier(new Utils.InsecureHostnameVerifier())
@@ -491,7 +491,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
 
 
     private SGXResponse sgxSum(ClientSumRequest cliRequest) {
-        TypedKey typedKey = sgxDb.get(cliRequest.getUserIdentifier());
+        TypedKey typedKey = new TypedKey(cliRequest.getTypedValue().getType(), db.get(cliRequest.getUserIdentifier()).getEncodedHomoKey());
 
         long balance = db.get(cliRequest.getUserIdentifier()).getAmountAsLong();
         SGXClientSumRequest sgxClientRequest = new SGXClientSumRequest(typedKey, balance , Long.parseLong(cliRequest.getTypedValue().getAmount()));

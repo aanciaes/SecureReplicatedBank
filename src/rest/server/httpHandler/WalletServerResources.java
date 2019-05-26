@@ -4,6 +4,8 @@ import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
+import hlib.hj.mlib.HelpSerial;
+import hlib.hj.mlib.PaillierKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,9 +14,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -126,7 +131,7 @@ public class WalletServerResources implements WalletServer {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse getBetween(HttpHeaders headers, DataType dataType, String keyPrefix, Long lowest, Long highest, String encryptedKey) {
+    public ClientResponse getBetween(HttpHeaders headers, DataType dataType, String keyPrefix, Long lowest, Long highest, String paillierKey, String symKey) {
         Long nonce = getNonceFromHeader(headers);
 
         try {
@@ -135,18 +140,17 @@ public class WalletServerResources implements WalletServer {
 
                 if(DataType.HOMO_ADD == dataType){
                     if (keyPrefix != null) {
-                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, true, encryptedKey,  nonce);
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
                     } else {
-                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, true, encryptedKey, nonce);
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, nonce);
                     }
                 }else{
                     if (keyPrefix != null) {
-                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix,false, nonce);
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
                     } else {
-                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, false, nonce);
+                        reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, nonce);
                     }
                 }
-
 
                 // Reply from the replicas
                 ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
@@ -164,7 +168,7 @@ public class WalletServerResources implements WalletServer {
             } else {
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             logger.error(e.getMessage(), e);
             throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);

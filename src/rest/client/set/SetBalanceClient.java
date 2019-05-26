@@ -46,14 +46,14 @@ public class SetBalanceClient {
             ClientCreateRequest clientSetRequest = new ClientCreateRequest();
             clientSetRequest.setToPubKey(toPubkString);
 
-            TypedValue clientTv = new TypedValue (amount, dataType);
+            TypedValue clientTv = new TypedValue (amount, dataType, null, null);
             clientSetRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
             clientSetRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(clientSetRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(kp.getPrivate(), hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", kp.getPrivate(), hashedMessage);
 
             clientSetRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 

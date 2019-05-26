@@ -4,29 +4,28 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import rest.server.model.TypedValue;
 
 public class SGXGetBetweenRequest implements Serializable {
 
-    private Map<String, BigInteger> dbServer = new HashMap<>();
+    private Map<String, TypedValue> dbServer = new HashMap<>();
     private BigInteger lowest;
     private BigInteger highest;
-    private String key;
 
     public SGXGetBetweenRequest() {
     }
 
-    public SGXGetBetweenRequest(Map<String, BigInteger> dbServer, BigInteger lowest, BigInteger highest, String key) {
+    public SGXGetBetweenRequest(Map<String, TypedValue> dbServer, BigInteger lowest, BigInteger highest) {
         this.dbServer = dbServer;
         this.lowest = lowest;
         this.highest = highest;
-        this.key = key;
     }
 
-    public Map<String, BigInteger> getDbServer() {
+    public Map<String, TypedValue> getDbServer() {
         return dbServer;
     }
 
-    public void setDbServer(Map<String, BigInteger> dbServer) {
+    public void setDbServer(Map<String, TypedValue> dbServer) {
         this.dbServer = dbServer;
     }
 
@@ -44,13 +43,5 @@ public class SGXGetBetweenRequest implements Serializable {
 
     public void setHighest(BigInteger highest) {
         this.highest = highest;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
     }
 }

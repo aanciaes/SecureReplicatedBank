@@ -49,14 +49,14 @@ public class SumClient {
                 amount = ((Long) homoOpeInt.encrypt(Integer.parseInt(amount))).toString();
             }
 
-            TypedValue clientTv = new TypedValue (amount, dataType);
+            TypedValue clientTv = new TypedValue (amount, dataType, null, null);
             clientRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(clientRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(kp.getPrivate(), hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", kp.getPrivate(), hashedMessage);
 
             clientRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 
