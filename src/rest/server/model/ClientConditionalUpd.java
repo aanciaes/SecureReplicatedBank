@@ -1,59 +1,43 @@
 package rest.server.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import rest.utils.Updates;
-
 import java.io.Serializable;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
+import rest.utils.Updates;
 
 public class ClientConditionalUpd implements Serializable {
 
-    private PublicKey publicKey;
-    private TypedValue typedValue;
-    private String nsquare;
-    private Long nonce;
-    private String signature;
+    private String condKey;
+    private Double condValue;
     private List<Updates> updatesList = new ArrayList<>();
     private int condition;
-
+    private Long nonce;
 
     public ClientConditionalUpd() {
     }
 
-    public ClientConditionalUpd(PublicKey publicKey, TypedValue typedValue, String nsquare, Long nonce, String signature, List<Updates> updatesList, int condition) {
-        this.publicKey = publicKey;
-        this.typedValue = typedValue;
-        this.nsquare = nsquare;
+    public ClientConditionalUpd(String condKey, Double condValue, List<Updates> updatesList, int condition, Long nonce) {
+        this.condKey = condKey;
+        this.condValue = condValue;
         this.nonce = nonce;
-        this.signature = signature;
         this.updatesList = updatesList;
         this.condition = condition;
     }
 
-    public PublicKey getPublicKey() {
-        return publicKey;
+    public String getCondKey() {
+        return condKey;
     }
 
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
+    public void setCondKey(String condKey) {
+        this.condKey = condKey;
     }
 
-    public TypedValue getTypedValue() {
-        return typedValue;
+    public Double getCondValue() {
+        return condValue;
     }
 
-    public void setTypedValue(TypedValue typedValue) {
-        this.typedValue = typedValue;
-    }
-
-    public String getNsquare() {
-        return nsquare;
-    }
-
-    public void setNsquare(String nsquare) {
-        this.nsquare = nsquare;
+    public void setCondValue(Double condValue) {
+        this.condValue = condValue;
     }
 
     public Long getNonce() {
@@ -62,14 +46,6 @@ public class ClientConditionalUpd implements Serializable {
 
     public void setNonce(Long nonce) {
         this.nonce = nonce;
-    }
-
-    public String getSignature() {
-        return signature;
-    }
-
-    public void setSignature(String signature) {
-        this.signature = signature;
     }
 
     public List<Updates> getUpdatesList() {
@@ -86,11 +62,6 @@ public class ClientConditionalUpd implements Serializable {
 
     public void setCondition(int condition) {
         this.condition = condition;
-    }
-
-    @JsonIgnore
-    public String getSerializeMessage() {
-        return publicKey + "," + typedValue.getAmount() + "," + nsquare + ":" + getUpdatesList().toString() + ":" + nonce;
     }
 }
 

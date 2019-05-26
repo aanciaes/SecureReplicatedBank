@@ -4,6 +4,7 @@ import hlib.hj.mlib.HelpSerial;
 import java.net.URI;
 import java.security.KeyPair;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -53,7 +54,7 @@ public class CreateClient {
             //CreateHomoAddClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "5000", pk);
             CreateHomoOpeIntClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", opeIntKey);
 
-            SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.HOMO_OPE_INT);
+            //SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.HOMO_OPE_INT);
 
             //GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, DataType.HOMO_ADD, 980, 4000, null);
             //GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, DataType.HOMO_OPE_INT, 980, 1200, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQK");
@@ -67,12 +68,11 @@ public class CreateClient {
             //GetBalanceClient.getBalance(target, faults, kp,  null);
             //GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
             //SetBalanceClient.setBalance(target, faults, kp, HelpSerial.toString(pk), "4000", DataType.HOMO_ADD);
-            GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
+            //GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
 
             List<Updates> updates = new ArrayList<>();
-            updates.add(new Updates("add", kp.getPublic(), "400"));
-            updates.add(new Updates("set", kp.getPublic(), "400"));
-
+            updates.add(new Updates(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
+            updates.add(new Updates(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
 
             //0 -> db[cond_key] = cond_value
             //1 -> db[cond_key] != cond_value
@@ -81,7 +81,7 @@ public class CreateClient {
             // 4 -> db[cond_key] < cond_value
             // 5 -> db[cond_key] <= cond_value
             // ir buscar todos os clientes que holdem a condicao passada como variavel e aplicar a lista de updates
-            ConditionalClient.conditional_upd( target, faults, kp, "200", "0", updates, DataType.WALLET, null);
+            ConditionalClient.conditional_upd(target, faults, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), 10000.0, updates, 4);
         } catch (Exception e) {
             e.printStackTrace();
         }

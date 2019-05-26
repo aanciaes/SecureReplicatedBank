@@ -6,10 +6,7 @@ import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import com.sun.xml.internal.bind.v2.TODO;
-import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
-import hlib.hj.mlib.PaillierKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,21 +14,14 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.net.URI;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import rest.server.model.*;
-import rest.sgx.model.*;
-import rest.utils.AdminSgxKeyLoader;
-import rest.utils.Updates;
-import rest.utils.Utils;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -39,7 +29,23 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import javax.xml.crypto.Data;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import rest.server.model.ClientConditionalUpd;
+import rest.server.model.ClientCreateRequest;
+import rest.server.model.ClientSumRequest;
+import rest.server.model.ClientTransferRequest;
+import rest.server.model.DataType;
+import rest.server.model.ReplicaResponse;
+import rest.server.model.TypedValue;
+import rest.server.model.WalletOperationType;
+import rest.sgx.model.GetBetweenResponse;
+import rest.sgx.model.SGXClientSumRequest;
+import rest.sgx.model.SGXConditionalUpdateRequest;
+import rest.sgx.model.SGXGetBetweenRequest;
+import rest.sgx.model.SGXResponse;
+import rest.sgx.model.TypedKey;
+import rest.utils.Utils;
 
 /**
  * Represents the replica. This is the class that holds all the data of the system, currently saved in memory
@@ -120,7 +126,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     ClientConditionalUpd clientConditionalUpd = (ClientConditionalUpd) objIn.readObject();
                     long nonceCond = (Long) objIn.readObject();
 
-                    appRes = conditional_upd(clientConditionalUpd, nonceCond, reqType);
+                    appRes = conditionalUpd(clientConditionalUpd, nonceCond, reqType);
                     objOut.writeObject(appRes);
 
                     break;
@@ -177,7 +183,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 case GET_BETWEEN:
                     DataType dataType = (DataType) objIn.readObject();
                     Long lowest = (Long) objIn.readObject();
-                    Long highest =(Long) objIn.readObject();
+                    Long highest = (Long) objIn.readObject();
                     boolean hasKeyPrefix = (boolean) objIn.readObject();
                     String keyPrefix = null;
                     if (hasKeyPrefix) {
@@ -249,8 +255,8 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             return new ReplicaResponse(200, "Success", new ObjectMapper().writer().writeValueAsString(new GetBetweenResponse(rst)), (nonce + 1), operationType);
         } else {
             SGXResponse sgxResponse = sgxGetBetween(keyPrefix, BigInteger.valueOf(lowest), BigInteger.valueOf(highest));
-            if(sgxResponse.getStatusCode() == 200){
-                return new ReplicaResponse(sgxResponse.getStatusCode(),"Success" , sgxResponse.getBody().toString(), (nonce + 1), operationType);
+            if (sgxResponse.getStatusCode() == 200) {
+                return new ReplicaResponse(sgxResponse.getStatusCode(), "Success", sgxResponse.getBody().toString(), (nonce + 1), operationType);
             }
             return new ReplicaResponse(400, "Not supported yet", null, (nonce + 1), operationType);
         }
@@ -402,7 +408,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                     case HOMO_OPE_INT:
 
                         SGXResponse sgxResponse = sgxSum(sumRequest);
-                        if(sgxResponse.getStatusCode() != 200){
+                        if (sgxResponse.getStatusCode() != 200) {
                             return new ReplicaResponse(sgxResponse.getStatusCode(), sgxResponse.getBody().toString(), null, 0L, null);
                         }
                         String newAmount = new ObjectMapper().convertValue(sgxResponse.getBody(), String.class);
@@ -421,9 +427,20 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private ReplicaResponse conditional_upd(ClientConditionalUpd clientConditionalUpd, long nonce, WalletOperationType operationType) {
-        if (db.containsKey(clientConditionalUpd.getPublicKey())) {
-            db.forEach((String key, TypedValue tv) ->{
+    private ReplicaResponse conditionalUpd(ClientConditionalUpd clientConditionalUpd, long nonce, WalletOperationType operationType) {
+        if (db.containsKey(clientConditionalUpd.getCondKey())) {
+
+            if (checkCondition(db.get(clientConditionalUpd.getCondKey()), clientConditionalUpd.getCondValue(), clientConditionalUpd.getCondition())) {
+                //TODO
+                System.out.println("condition holds");
+                return new ReplicaResponse(200, "Condition holds", null, (nonce + 1), null);
+            } else {
+                System.out.println("condition does not hold");
+                return new ReplicaResponse(412, "Pre condition failed", null, 0L, null);
+            }
+
+
+            /*db.forEach((String key, TypedValue tv) ->{
                 switch (tv.getType()){
                     case HOMO_ADD:
                         conditional_upd_homoAdd(clientConditionalUpd);
@@ -439,70 +456,62 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                         //conditional_upd_lowerOrEqual(clientConditionalUpd);
                     default:
                 }
-            });
+            });*/
         } else {
-            return new ReplicaResponse(400, "Account does not exist: " + clientConditionalUpd.getPublicKey(), null, 0L, null);
-        }
-        return new ReplicaResponse(400, "Account does not exist: " + clientConditionalUpd.getPublicKey(), null, 0L, null);
-    }
-    private void conditional_upd_homoAdd(ClientConditionalUpd clientConditionalUpd) {
-
-
-    }
-
-    private void conditional_upd_homoOpeInt(ClientConditionalUpd clientConditionalUpd) {
-
-
-    }
-
-
-    private void conditional_upd_equal(ClientConditionalUpd clientConditionalUpd, Double checkBalance, String key, TypedValue tv) {
-        if(checkBalance == Double.parseDouble(tv.getAmount())){
-            List<Updates> updatesList = clientConditionalUpd.getUpdatesList();
-            for(int i = 0; i< updatesList.size(); i++){
-                if(updatesList.get(i).getOp().equals("add")){
-                    conditional_upd_walletAdd(updatesList.get(i), key);
-                }else if(updatesList.get(i).getOp().equals("set")){
-                    conditional_upd_walletSet(updatesList.get(i), key);
-                }else{
-                    //Retornar operacao nao reconhecida
-                }
-            }
+            return new ReplicaResponse(404, "Account does not exist: " + clientConditionalUpd.getCondKey(), null, 0L, null);
         }
     }
 
-    private void conditional_upd_walletSet(Updates updates, String key) {
-        ClientCreateRequest clientCreateRequest= new ClientCreateRequest();
-        clientCreateRequest.setToPubKey(key);
-        TypedValue newTv = new TypedValue();
-        newTv.setAmount(updates.getValue());
-        clientCreateRequest.setTypedValue(newTv);
-        setBalance(clientCreateRequest, 0L, WalletOperationType.SET_BALANCE);
-
+    private boolean checkCondition(TypedValue typedValue, Double condValue, int condition) {
+        switch (typedValue.getType()) {
+            case WALLET:
+                return checkConditionLocally(typedValue.getAmountAsDouble(), condValue, condition);
+            case HOMO_ADD:
+            case HOMO_OPE_INT:
+                return checkConditionOnSecureSgx(typedValue, condValue, condition);
+            default:
+                return false;
+        }
     }
 
-    private void conditional_upd_walletAdd(Updates updates, String key) {
-        ClientSumRequest clientSumRequest = new ClientSumRequest();
-        clientSumRequest.setUserIdentifier(key);
-        TypedValue newTv = new TypedValue();
-        newTv.setAmount(updates.getValue());
-        newTv.setType(DataType.WALLET);
-        clientSumRequest.setTypedValue(newTv);
-        sum(clientSumRequest, 0L, WalletOperationType.SUM);
-    }
-
-    private void conditional_upd_wallet(ClientConditionalUpd clientConditionalUpd, String key, TypedValue tv) {
-        Map<String, TypedValue> filtered = new HashMap<>();
-        Double checkBalance = Double.parseDouble(clientConditionalUpd.getTypedValue().getAmount());
-        switch (clientConditionalUpd.getCondition()){
+    private boolean checkConditionLocally(Double balance, Double condValue, int condition) {
+        switch (condition) {
             case 0:
-                conditional_upd_equal(clientConditionalUpd, checkBalance, key, tv);
-                break;
-            //CAse restantes operaçoes
-
+                return balance.equals(condValue);
+            case 1:
+                return !balance.equals(condValue);
+            case 2:
+                return balance > condValue;
+            case 3:
+                return balance >= condValue;
+            case 4:
+                return balance < condValue;
+            case 5:
+                return balance <= condValue;
+            default:
+                return false;
         }
-
     }
+
+    private boolean checkConditionOnSecureSgx(TypedValue typedValue, Double condValue, int condition) {
+
+        SGXConditionalUpdateRequest sgxRequest = new SGXConditionalUpdateRequest(typedValue, condValue, condition);
+
+        Client client = ClientBuilder.newBuilder()
+                .hostnameVerifier(new Utils.InsecureHostnameVerifier())
+                .build();
+
+        URI baseURI = UriBuilder.fromUri("https://0.0.0.0:6699/sgx").build();
+        WebTarget target = client.target(baseURI);
+        Gson gson = new Gson();
+        String json = gson.toJson(sgxRequest);
+
+        Response response = target.path("/check_condition").request()
+                .post(Entity.entity(json, MediaType.APPLICATION_JSON));
+
+        return response.readEntity(Boolean.class);
+    }
+
 
     // For debug purposes only. Return all users of the current server directly
     public Map<String, TypedValue> getAllNoConsensus() {
@@ -547,11 +556,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private SGXResponse sgxGetBetween(String keyPrefix, BigInteger lowest, BigInteger highest){
+    private SGXResponse sgxGetBetween(String keyPrefix, BigInteger lowest, BigInteger highest) {
         Map<String, TypedValue> toSgx = new HashMap<>();
 
         db.forEach((String key, TypedValue typedValue) -> {
-            if(typedValue.getType() == DataType.HOMO_ADD && (keyPrefix == null ||  key.startsWith(keyPrefix))){
+            if (typedValue.getType() == DataType.HOMO_ADD && (keyPrefix == null || key.startsWith(keyPrefix))) {
                 toSgx.put(key, typedValue);
             }
         });
@@ -578,7 +587,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         TypedKey typedKey = new TypedKey(cliRequest.getTypedValue().getType(), db.get(cliRequest.getUserIdentifier()).getEncodedHomoKey());
 
         long balance = db.get(cliRequest.getUserIdentifier()).getAmountAsLong();
-        SGXClientSumRequest sgxClientRequest = new SGXClientSumRequest(typedKey, balance , Long.parseLong(cliRequest.getTypedValue().getAmount()));
+        SGXClientSumRequest sgxClientRequest = new SGXClientSumRequest(typedKey, balance, Long.parseLong(cliRequest.getTypedValue().getAmount()));
 
         Client client = ClientBuilder.newBuilder()
                 .hostnameVerifier(new Utils.InsecureHostnameVerifier())

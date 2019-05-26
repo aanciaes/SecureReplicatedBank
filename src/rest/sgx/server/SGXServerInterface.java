@@ -24,9 +24,8 @@ public interface SGXServerInterface {
     SGXResponse getBetween(SGXGetBetweenRequest sgxClientRequest);
 
     @POST
-    @Path("/conditional_upd")
+    @Path("/check_condition")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    void compare(SGXConditionalUpdateRequest sgxClientRequest);
-
+    boolean compare(SGXConditionalUpdateRequest sgxClientRequest);
 }

@@ -98,5 +98,5 @@ public interface WalletServer {
     @Path("/conditional_upd")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse conditional_upd(@Context HttpHeaders headers, ClientConditionalUpd clientSetRequest);
+    ClientResponse conditionalUpd(@Context HttpHeaders headers, ClientConditionalUpd clientSetRequest);
 }

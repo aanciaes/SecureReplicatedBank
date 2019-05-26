@@ -4,8 +4,6 @@ import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.KeyLoader;
-import hlib.hj.mlib.HelpSerial;
-import hlib.hj.mlib.PaillierKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -13,13 +11,9 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.net.URI;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -31,19 +25,22 @@ import java.util.List;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.*;
-
-import com.google.gson.Gson;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import rest.server.model.*;
-import rest.utils.Utils;
-import rest.utils.AdminSgxKeyLoader;
+import rest.server.model.ClientConditionalUpd;
+import rest.server.model.ClientCreateRequest;
+import rest.server.model.ClientResponse;
+import rest.server.model.ClientSumRequest;
+import rest.server.model.ClientTransferRequest;
+import rest.server.model.CustomExtractor;
+import rest.server.model.DataType;
+import rest.server.model.ReplicaResponse;
+import rest.server.model.WalletOperationType;
 import rest.server.replica.ReplicaServer;
+import rest.utils.AdminSgxKeyLoader;
 
 /**
  * Restful resources of wallet server
@@ -131,13 +128,13 @@ public class WalletServerResources implements WalletServer {
             if (lowest != null && highest != null) {
                 byte[] reply;
 
-                if(DataType.HOMO_ADD == dataType){
+                if (DataType.HOMO_ADD == dataType) {
                     if (keyPrefix != null) {
                         reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
                     } else {
                         reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, false, nonce);
                     }
-                }else{
+                } else {
                     if (keyPrefix != null) {
                         reply = invokeOp(false, WalletOperationType.GET_BETWEEN, dataType, lowest, highest, true, keyPrefix, nonce);
                     } else {
@@ -347,39 +344,29 @@ public class WalletServerResources implements WalletServer {
         }
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
-    public ClientResponse conditional_upd(HttpHeaders headers, ClientConditionalUpd clientSetRequest){
+    public ClientResponse conditionalUpd(HttpHeaders headers, ClientConditionalUpd clientSetRequest) {
         try {
-            byte[] hashMessage = generateHash(clientSetRequest.getSerializeMessage().getBytes());
-            PublicKey fromPublicKey = clientSetRequest.getPublicKey();
-            byte[] decryptedHash = decryptRequest(fromPublicKey, Base64.getDecoder().decode(clientSetRequest.getSignature()));
+            Long nonce = getNonceFromHeader(headers);
+            byte[] reply = invokeOp(
+                    true,
+                    WalletOperationType.CONDITIONAL_UPD,
+                    clientSetRequest,
+                    nonce
+            );
 
-            if (decryptedHash == null) {
-                throw new WebApplicationException(Response.Status.FORBIDDEN);
-            }
-            if (Arrays.equals(hashMessage, decryptedHash)) {
+            ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
+            ObjectInput objIn = new ObjectInputStream(byteIn);
 
-                Long nonce = getNonceFromHeader(headers);
-                byte[] reply = invokeOp(
-                        true,
-                        WalletOperationType.CONDITIONAL_UPD,
-                        clientSetRequest,
-                        nonce
-                );
+            ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
 
-                ByteArrayInputStream byteIn = new ByteArrayInputStream(reply);
-                ObjectInput objIn = new ObjectInputStream(byteIn);
-
-                ReplicaResponse rs = (ReplicaResponse) objIn.readObject();
-
-                if (rs.getStatusCode() != 200) {
-                    throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
-                } else {
-                    return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages()));
-                }
+            if (rs.getStatusCode() != 200) {
+                throw new WebApplicationException(rs.getMessage(), rs.getStatusCode());
             } else {
-                throw new WebApplicationException(Response.Status.FORBIDDEN);
+                return new ClientResponse(rs.getBody(), convertTomMessages(extractor.getRound((nonce + 1)).getTomMessages()));
             }
+
         } catch (IOException | ClassNotFoundException e) {
             logger.error(e.getMessage(), e);
             e.printStackTrace();

@@ -1,36 +1,36 @@
 package rest.utils;
 
-import java.security.PublicKey;
+import java.io.Serializable;
 
-public class Updates {
+public class Updates implements Serializable {
 
-    private String op;
-    private PublicKey key;
+    private int op;
+    private String updKey;
     private String value;
 
     public Updates() {
     }
 
-    public Updates(String op, PublicKey key, String value) {
+    public Updates(int op, String updKey, String value) {
         this.op = op;
-        this.key = key;
+        this.updKey = updKey;
         this.value = value;
     }
 
-    public String getOp() {
+    public int getOp() {
         return op;
     }
 
-    public void setOp(String op) {
+    public void setOp(int op) {
         this.op = op;
     }
 
-    public PublicKey getKey() {
-        return key;
+    public String getUpdKey() {
+        return updKey;
     }
 
-    public void setKey(PublicKey key) {
-        this.key = key;
+    public void setUpdKey(String updKey) {
+        this.updKey = updKey;
     }
 
     public String getValue() {
