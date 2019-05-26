@@ -29,7 +29,7 @@ public class ManagerHTTPServerResources implements ManagerServer {
         try {
             //java -cp projectJar/lab1.jar rest.server.httpHandler.WalletJdkHttpServer -id 0 -p 8080
 
-            File file = new File("projectJar/lab1.jar");
+            File file = new File("projectJar/project-v2.2.jar");
             String path = file.getPath();
             /*URL[] classLoaderUrls = new URL[]{new URL("file://" + path)};
             // Create a new URLClassLoader
@@ -53,7 +53,7 @@ public class ManagerHTTPServerResources implements ManagerServer {
             }
             //method.invoke(null, arg);
             //Process -> get process
-            ProcessBuilder pb = new ProcessBuilder("java", "-cp", "projectJar/lab1.jar", "rest.server.httpHandler.WalletJdkHttpServer", "-id", "" + adminServerRequest.getServerId(), "-p", "" + adminServerRequest.getServerPort());
+            ProcessBuilder pb = new ProcessBuilder("java", "-cp", "projectJar/project-v2.2.jar", "rest.server.httpHandler.WalletJdkHttpServer", "-id", "" + adminServerRequest.getServerId(), "-p", "" + adminServerRequest.getServerPort());
             Process p = pb.start();
             processes.put(adminServerRequest.getServerId(), p);
 
