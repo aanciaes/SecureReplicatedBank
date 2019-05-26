@@ -72,9 +72,9 @@ public class Utils {
      * @param message data to encrypt
      * @return Encrypted data
      */
-    public static byte[] encryptMessage(Key key, byte[] message) {
+    public static byte[] encryptMessage(String alg, String provider, Key key, byte[] message) {
         try {
-            Cipher c = Cipher.getInstance("RSA", "SunJCE");
+            Cipher c = Cipher.getInstance(alg, provider);
             c.init(Cipher.ENCRYPT_MODE, key);
             return c.doFinal(message);
         } catch (Exception e) {
@@ -145,15 +145,14 @@ public class Utils {
         }
     }
 
-    public static byte[] decrypt(PrivateKey privateKey, byte[] message) {
+    public static byte[] decrypt(String alg, String provider, Key key, byte[] message) {
         try {
-            Cipher c = Cipher.getInstance("RSA", "SunJCE");
-            c.init(Cipher.DECRYPT_MODE, privateKey);
+            Cipher c = Cipher.getInstance(alg, provider);
+            c.init(Cipher.DECRYPT_MODE, key);
             return c.doFinal(message);
         } catch (Exception e) {
             return new byte[0];
         }
-
     }
 
     /**

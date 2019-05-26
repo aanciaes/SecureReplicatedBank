@@ -35,7 +35,7 @@ public class ManagerClient {
             adminRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(adminRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), hashedMessage);
             adminRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 
             String json = gson.toJson(adminRequest);

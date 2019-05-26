@@ -1,16 +1,25 @@
 package rest.sgx.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.HomoOpeInt;
 
+import hlib.hj.mlib.PaillierKey;
 import java.math.BigInteger;
 import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 
+import java.util.Map;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import rest.server.model.TypedValue;
+import rest.sgx.model.GetBetweenResponse;
 import rest.sgx.model.SGXClientSumRequest;
 import rest.sgx.model.SGXConditionalUpdateRequest;
 import rest.sgx.model.SGXGetBetweenRequest;
@@ -30,7 +39,7 @@ public class SGXServerResources implements SGXServerInterface {
             PrivateKey privateKey = AdminSgxKeyLoader.loadPrivateKey("sgxPrivateKey.pem");
             byte[] keyBytes = Base64.getDecoder().decode(sgxClientRequest.getTypedKey().getKey());
 
-            byte[] decryptedKey = Utils.decrypt(privateKey, keyBytes);
+            byte[] decryptedKey = Utils.decrypt("RSA", "SunJCE",privateKey, keyBytes);
 
             HomoOpeInt opeInt = new HomoOpeInt(new String(decryptedKey));
 
@@ -49,17 +58,29 @@ public class SGXServerResources implements SGXServerInterface {
         logger.info("Protected getBetween operation");
 
         try {
-            List<String> rst = new ArrayList();
+            List<String> rst = new ArrayList<>();
+            Map<String, TypedValue> db = sgxClientRequest.getDbServer();
+
             PrivateKey privateKey = AdminSgxKeyLoader.loadPrivateKey("sgxPrivateKey.pem");
-            byte[] keyBytes = Base64.getDecoder().decode(sgxClientRequest.getKey());
-            byte[] decryptedKey = Utils.decrypt(privateKey, keyBytes);
 
-            Integer highest = sgxClientRequest.getHighest().intValue();
-            Integer lowest = sgxClientRequest.getLowest().intValue();
+            int highest = sgxClientRequest.getHighest().intValue();
+            int lowest = sgxClientRequest.getLowest().intValue();
 
-            sgxClientRequest.getDbServer().forEach((String key, BigInteger value) -> {
+            System.out.println(sgxClientRequest.getDbServer().size());
+            db.forEach((String key, TypedValue value) -> {
                 try{
-                    BigInteger decryptValue = HomoAdd.decrypt(value, HomoAdd.keyFromString(Base64.getEncoder().encodeToString(decryptedKey)));
+                    byte[] symKey = Base64.getDecoder().decode(value.getEncodedSymKey());
+                    byte[] paillierKey = Base64.getDecoder().decode(value.getEncodedHomoKey());
+
+                    byte[] decryptedSymKey = Utils.decrypt("RSA", "SunJCE", privateKey, symKey);
+                    System.out.println("sym key: " + Base64.getEncoder().encodeToString(decryptedSymKey));
+
+                    SecretKey secretKey = new SecretKeySpec(decryptedSymKey, 0, decryptedSymKey.length, "AES");
+                    byte[] decryptedPaillierKeyBytes = Utils.decrypt("AES", "SunJCE", secretKey, paillierKey);
+
+                    PaillierKey pk = (PaillierKey) HelpSerial.fromString(new String(decryptedPaillierKeyBytes));
+
+                    BigInteger decryptValue = HomoAdd.decrypt(value.getAmountAsBigInteger(), pk);
 
                     if (decryptValue.intValue() <= highest && decryptValue.intValue() >= lowest) {
                         rst.add(key);
@@ -67,10 +88,9 @@ public class SGXServerResources implements SGXServerInterface {
                 }catch (Exception e){
                     e.printStackTrace();
                 }
-
             });
-            System.out.println(rst.size());
-            return new SGXResponse(200, rst);
+
+            return new SGXResponse(200, new ObjectMapper().writer().writeValueAsString(new GetBetweenResponse(rst)));
         } catch (Exception e) {
             e.printStackTrace();
             return new SGXResponse(500, "Internal Server Error");

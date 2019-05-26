@@ -1,10 +1,23 @@
 package rest.client.get;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoOpeInt;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.security.KeyPair;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
@@ -14,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 import rest.server.model.DataType;
 import rest.server.model.WalletOperationType;
+import rest.sgx.model.GetBetweenResponse;
 import rest.utils.AdminSgxKeyLoader;
 import rest.utils.Utils;
 
@@ -21,14 +35,14 @@ public class GetBetweenClient {
 
     private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
 
-    public static void getBalanceBetween(WebTarget target, int faults, String opeKey, DataType dataType, Integer lowest, Integer highest, String keyPrefix, PaillierKey pk) {
+    public static void getBalanceBetween(WebTarget target, int faults, String opeKey, DataType dataType, Integer lowest, Integer highest, String keyPrefix) {
         try {
             // Nonce to randomise message encryption
             long nonce = Utils.generateNonce();
 
             Long requestLowest;
             Long requestHighest;
-            String encryptedKey = null;
+
             if (dataType == DataType.HOMO_OPE_INT) {
                 HomoOpeInt ope = new HomoOpeInt(opeKey);
                 requestLowest = ope.encrypt(lowest);
@@ -38,18 +52,12 @@ public class GetBetweenClient {
                 requestHighest = highest.longValue();
             }
 
-            if(pk != null){
-                byte[] encyptedPallietKey = Utils.encryptMessage(AdminSgxKeyLoader.loadPublicKey("sgxPublicKey.pem"), pk.toString().getBytes());
-                encryptedKey = Base64.getEncoder().encodeToString(encyptedPallietKey);
-            }
-
             Response response = target
                     .path("/getbetween")
                     .queryParam("data_type", dataType)
                     .queryParam("lowest", requestLowest)
                     .queryParam("highest", requestHighest)
                     .queryParam("key_prf", keyPrefix)
-                    .queryParam("encrypted_key", encryptedKey)
                     .request()
                     .header("nonce", nonce)
                     .get();
@@ -59,16 +67,16 @@ public class GetBetweenClient {
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
-                //new ObjectMapper().convertValue(clientResponse.getBody(), TypedValue.class);
+                String responseBodyAsString = (String) clientResponse.getBody();
 
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.GET_BETWEEN);
 
                 if (conflicts > faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 } else {
-                    List<String> keys = (ArrayList<String>) clientResponse.getBody();
+                    GetBetweenResponse result = new ObjectMapper().readValue(responseBodyAsString, GetBetweenResponse.class);
 
-                    keys.forEach(key -> {
+                    result.getResults().forEach(key -> {
                         logger.info("Key between: " + key);
                         System.out.println("Keys in between with dataType: " + dataType + ": " + key);
                     });

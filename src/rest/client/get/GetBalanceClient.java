@@ -40,7 +40,7 @@ public class GetBalanceClient {
             long nonce = Utils.generateNonce();
 
             byte[] hashedMessage = Utils.hashMessage((userKeyString + nonce).getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(userKeyPair.getPrivate(), hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", userKeyPair.getPrivate(), hashedMessage);
 
             Response response = target
                     .path(String.format("/get/%s", URLEncoder.encode(userKeyString, "utf-8")))

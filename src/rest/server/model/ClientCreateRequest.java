@@ -10,17 +10,15 @@ public class ClientCreateRequest implements Serializable {
     private TypedValue typedValue;
     private Long nonce;
     private String signature;
-    private String encryptedKey;
 
     public ClientCreateRequest() {
     }
 
-    public ClientCreateRequest(String toPubKey, TypedValue typedValue, Long nonce, String signature, String encryptedKey) {
+    public ClientCreateRequest(String toPubKey, TypedValue typedValue, Long nonce, String signature) {
         this.toPubKey = toPubKey;
         this.typedValue = typedValue;
         this.nonce = nonce;
         this.signature = signature;
-        this.encryptedKey = encryptedKey;
     }
 
     public String getToPubKey() {
@@ -58,8 +56,4 @@ public class ClientCreateRequest implements Serializable {
     public String getSerializeMessage() {
         return toPubKey + "," + typedValue.getAmount() + ":" + nonce;
     }
-
-    public String getEncryptedKey() {return encryptedKey;}
-
-    public void setEncryptedKey(String encryptedKey) {this.encryptedKey = encryptedKey;}
 }

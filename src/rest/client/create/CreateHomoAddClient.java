@@ -1,8 +1,12 @@
 package rest.client.create;
 
 import com.google.gson.Gson;
+import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.PaillierKey;
+import java.security.Key;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.*;
@@ -41,18 +45,25 @@ public class CreateHomoAddClient {
             ClientCreateRequest clientRequest = new ClientCreateRequest();
             clientRequest.setToPubKey(toPubkString);
 
-            TypedValue clientTv = new TypedValue (amount, DataType.HOMO_ADD);
+            String homoAddPaillierKey = HelpSerial.toString(pk);
+
+            Key symKey = generateAES();
+
+            byte [] encryptedHomoAddKeyBytes = Utils.encryptMessage("AES", "SunJCE", symKey, homoAddPaillierKey.getBytes());
+            String encryptedPallierKey = Base64.getEncoder().encodeToString(encryptedHomoAddKeyBytes);
+
+            byte[] encryptedSymKeyBytes = Utils.encryptMessage("RSA", "SunJCE", AdminSgxKeyLoader.loadPublicKey("sgxPublicKey.pem"), symKey.getEncoded());
+            String encryptedSymKey = Base64.getEncoder().encodeToString(encryptedSymKeyBytes);
+
+            TypedValue clientTv = new TypedValue (amount, DataType.HOMO_ADD, encryptedPallierKey, encryptedSymKey);
             clientRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
             clientRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(clientRequest.getSerializeMessage().getBytes());
-            byte[] encryptedHash = Utils.encryptMessage(adminPrivateKey, hashedMessage);
+            byte[] encryptedHash = Utils.encryptMessage("RSA", "SunJCE", adminPrivateKey, hashedMessage);
 
-            byte[] encyptedPallietKey = Utils.encryptMessage(AdminSgxKeyLoader.loadPublicKey("sgxPublicKey.pem"), pk.toString().getBytes());
-
-            clientRequest.setEncryptedKey(Base64.getEncoder().encodeToString(encyptedPallietKey));
             clientRequest.setSignature(Base64.getEncoder().encodeToString(encryptedHash));
 
             Gson gson = new Gson();
@@ -74,7 +85,6 @@ public class CreateHomoAddClient {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 }else{
                     BigInteger responseAmount = HomoAdd.decrypt(clientRequest.getTypedValue().getAmountAsBigInteger(), pk);
-                    System.out.println(clientRequest.getTypedValue().getAmountAsBigInteger());
                     System.out.println("add money: " + responseAmount);
                 }
             } else {
@@ -82,6 +92,19 @@ public class CreateHomoAddClient {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static Key generateAES () {
+        try {
+            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+            keyGen.init(256); // for example
+            SecretKey secretKey = keyGen.generateKey();
+
+            return secretKey;
+        } catch (Exception e){
+            e.printStackTrace();
+            return null;
         }
     }
 }
