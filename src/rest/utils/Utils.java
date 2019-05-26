@@ -2,17 +2,22 @@ package rest.utils;
 
 import bftsmart.reconfiguration.util.RSAKeyLoader;
 import bftsmart.tom.util.KeyLoader;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.util.Base64;
+import javax.crypto.Cipher;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.WalletOperationType;
-
-import javax.crypto.Cipher;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
-import java.security.*;
-import java.util.Base64;
 
 public class Utils {
 

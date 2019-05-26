@@ -516,30 +516,6 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private void applyUpdateSumOnSecureSgx(Update update, TypedValue typedValue) {
-        SGXApplyUpdateRequest updateRequest = new SGXApplyUpdateRequest(typedValue, update.getValue(), update.getOp());
-
-        Client client = ClientBuilder.newBuilder()
-                .hostnameVerifier(new Utils.InsecureHostnameVerifier())
-                .build();
-
-        URI baseURI = UriBuilder.fromUri("https://0.0.0.0:6699/sgx").build();
-        WebTarget target = client.target(baseURI);
-        Gson gson = new Gson();
-        String json = gson.toJson(updateRequest);
-
-        Response response = target.path("/applyConditionUpdate").request()
-                .post(Entity.entity(json, MediaType.APPLICATION_JSON));
-
-        SGXResponse sgxResponse = response.readEntity(SGXResponse.class);
-        String newBalance = (String) sgxResponse.getBody();
-        System.out.println("here: " + newBalance);
-
-        db.get(update.getUpdKey()).setAmount(newBalance);
-        System.out.println(db.get(update.getUpdKey()).getAmount());
-    }
-
-
     // For debug purposes only. Return all users of the current server directly
     public Map<String, TypedValue> getAllNoConsensus() {
         return db;

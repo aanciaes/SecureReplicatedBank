@@ -1,10 +1,5 @@
 package rest.serverController.server;
 
-import rest.utils.AdminSgxKeyLoader;
-import rest.serverController.model.AdminServerRequest;
-
-import javax.crypto.Cipher;
-import javax.ws.rs.core.HttpHeaders;
 import java.io.File;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -15,16 +10,20 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import javax.crypto.Cipher;
+import javax.ws.rs.core.HttpHeaders;
+import rest.serverController.model.AdminServerRequest;
+import rest.utils.AdminSgxKeyLoader;
 
 /**
  * Restful resources of admin server
  */
 public class ManagerHTTPServerResources implements ManagerServer {
     private Map<Integer, Process> processes = new HashMap<Integer, Process>();
+
     @Override
     public void upServer(HttpHeaders headers, AdminServerRequest adminServerRequest) {
-        //TODO:
-        if(!verifyIntegrity(adminServerRequest)){
+        if (!verifyIntegrity(adminServerRequest)) {
             return;
         }
         try {
@@ -43,18 +42,18 @@ public class ManagerHTTPServerResources implements ManagerServer {
             arg[1] = adminServerRequest.getServerPort();
             arg[2] = "-id";
             arg[3] = adminServerRequest.getServerId();
-            if(adminServerRequest.isDebug()){
-               arg[4] = "-d";
+            if (adminServerRequest.isDebug()) {
+                arg[4] = "-d";
             }
-            if(adminServerRequest.isTestMode()){
+            if (adminServerRequest.isTestMode()) {
                 arg[5] = "-t";
             }
-            if(adminServerRequest.isUnpredictable()){
+            if (adminServerRequest.isUnpredictable()) {
                 arg[6] = "-u";
             }
             //method.invoke(null, arg);
             //Process -> get process
-            ProcessBuilder pb = new ProcessBuilder("java", "-cp", "projectJar/lab1.jar", "rest.server.httpHandler.WalletJdkHttpServer", "-id", ""+adminServerRequest.getServerId(), "-p","" +adminServerRequest.getServerPort());
+            ProcessBuilder pb = new ProcessBuilder("java", "-cp", "projectJar/lab1.jar", "rest.server.httpHandler.WalletJdkHttpServer", "-id", "" + adminServerRequest.getServerId(), "-p", "" + adminServerRequest.getServerPort());
             Process p = pb.start();
             processes.put(adminServerRequest.getServerId(), p);
 
@@ -65,13 +64,9 @@ public class ManagerHTTPServerResources implements ManagerServer {
 
     @Override
     public void downServer(HttpHeaders headers, AdminServerRequest adminServerRequest) {
-        //TODO:
-        if(!verifyIntegrity(adminServerRequest)){
+        if (!verifyIntegrity(adminServerRequest)) {
             return;
         }
-        /*if(processes.size() < adminServerRequest.getFaults()*3){
-            return;
-        }*/
 
         Process p = processes.get(adminServerRequest.getServerId());
         p.destroy();

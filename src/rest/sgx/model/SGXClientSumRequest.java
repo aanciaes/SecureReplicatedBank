@@ -1,6 +1,5 @@
 package rest.sgx.model;
 
-import rest.server.model.TypedValue;
 import java.io.Serializable;
 
 public class SGXClientSumRequest implements Serializable {

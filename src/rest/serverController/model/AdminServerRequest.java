@@ -1,7 +1,6 @@
 package rest.serverController.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.io.Serializable;
 
 public class AdminServerRequest implements Serializable {
@@ -15,9 +14,10 @@ public class AdminServerRequest implements Serializable {
     private long nonce;
     private int faults;
 
-    public AdminServerRequest(){
+    public AdminServerRequest() {
 
     }
+
     public AdminServerRequest(int serverId, int serverPort,
                               boolean debug, boolean unpredictable, boolean testMode, int faults) {
         this.serverId = serverId;

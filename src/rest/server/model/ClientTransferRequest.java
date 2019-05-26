@@ -1,7 +1,6 @@
 package rest.server.model;
 
 import java.io.Serializable;
-import java.lang.reflect.Type;
 
 /**
  * Input class of the transfer money request

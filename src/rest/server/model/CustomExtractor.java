@@ -2,7 +2,6 @@ package rest.server.model;
 
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.Extractor;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInput;

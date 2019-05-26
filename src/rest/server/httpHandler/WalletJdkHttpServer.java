@@ -1,5 +1,8 @@
 package rest.server.httpHandler;
 
+import java.net.URI;
+import javax.net.ssl.SSLContext;
+import javax.ws.rs.core.UriBuilder;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -13,13 +16,10 @@ import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import rest.server.replica.ReplicaServer;
 
-import javax.net.ssl.SSLContext;
-import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
-
 public class WalletJdkHttpServer {
 
-    private static Options cmdOptions = new Options();;
+    private static Options cmdOptions = new Options();
+    ;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("javax.net.ssl.keyStore", "server.jks");
@@ -43,7 +43,7 @@ public class WalletJdkHttpServer {
         } else {
             // automatically generate the help statement
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp( "WalletJdkHttpServer -p <port> -id <replicaId> [OPTIONS]", cmdOptions );
+            formatter.printHelp("WalletJdkHttpServer -p <port> -id <replicaId> [OPTIONS]", cmdOptions);
             System.exit(-1);
         }
 
@@ -53,7 +53,7 @@ public class WalletJdkHttpServer {
         } else {
             // automatically generate the help statement
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp( "WalletJdkHttpServer -p <port> -id <replicaId> [OPTIONS]", cmdOptions );
+            formatter.printHelp("WalletJdkHttpServer -p <port> -id <replicaId> [OPTIONS]", cmdOptions);
             System.exit(-1);
         }
 
@@ -98,7 +98,7 @@ public class WalletJdkHttpServer {
         } catch (MissingOptionException missingOptionException) {
             // automatically generate the help statement
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp( "WalletJdkHttpServer -p <port> -id <replicaId> [OPTIONS]", cmdOptions );
+            formatter.printHelp("WalletJdkHttpServer -p <port> -id <replicaId> [OPTIONS]", cmdOptions);
             System.exit(-1);
             return null;
         }
