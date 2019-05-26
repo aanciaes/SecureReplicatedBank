@@ -1,40 +1,32 @@
 package rest.client.get;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoOpeInt;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.KeyPair;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-
-import hlib.hj.mlib.PaillierKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.server.model.ClientResponse;
 import rest.server.model.DataType;
 import rest.server.model.WalletOperationType;
 import rest.sgx.model.GetBetweenResponse;
-import rest.utils.AdminSgxKeyLoader;
 import rest.utils.Utils;
 
 public class GetBetweenClient {
 
-    private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
+    private static Logger logger = LogManager.getLogger(GetBetweenClient.class.getName());
 
+    /**
+     * Get all keys with balance between amount.
+     *
+     * @param target    WebTarget to the server
+     * @param faults    Number of fault that the client wants to tolerate
+     * @param opeKey    Homo Ope Key for homomorphic decryption
+     * @param dataType  Datatype for the request
+     * @param lowest    lowest
+     * @param highest   highest
+     * @param keyPrefix Match keys with key prefix
+     */
     public static void getBalanceBetween(WebTarget target, int faults, String opeKey, DataType dataType, Integer lowest, Integer highest, String keyPrefix) {
         try {
             // Nonce to randomise message encryption
@@ -63,7 +55,7 @@ public class GetBetweenClient {
                     .get();
 
             int status = response.getStatus();
-            logger.info("Get Balance Between Status: " + status);
+            logger.debug("Get Balance Between Status: " + status);
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
@@ -76,9 +68,9 @@ public class GetBetweenClient {
                 } else {
                     GetBetweenResponse result = new ObjectMapper().readValue(responseBodyAsString, GetBetweenResponse.class);
 
+                    logger.info("Keys between for datatype: " + dataType);
                     result.getResults().forEach(key -> {
-                        logger.info("Key between: " + key);
-                        System.out.println("Keys in between with dataType: " + dataType + ": " + key);
+                        logger.info("\t" + key);
                     });
                 }
             } else {

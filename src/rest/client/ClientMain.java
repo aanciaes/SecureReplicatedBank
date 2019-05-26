@@ -7,7 +7,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
-import rest.client.create.CreateClient;
 import rest.client.create.CreateWalletClient;
 import rest.client.get.GetBalanceClient;
 import rest.client.sum.TransferClient;
@@ -35,7 +34,7 @@ public class ClientMain {
     public static void main(String[] args) throws Exception {
 
         //Configuring standard log levels
-        Configurator.setLevel(CreateClient.class.getName(), Level.INFO);
+        Configurator.setLevel(TestClient.class.getName(), Level.INFO);
         Configurator.setLevel(GetBalanceClient.class.getName(), Level.INFO);
         Configurator.setLevel(TransferClient.class.getName(), Level.INFO);
         Configurator.setLevel(Utils.class.getName(), Level.INFO);
@@ -49,14 +48,14 @@ public class ClientMain {
         }
 
         if (cmd.hasOption("d")) {
-            Configurator.setLevel(CreateClient.class.getName(), Level.DEBUG);
+            Configurator.setLevel(TestClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(GetBalanceClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(TransferClient.class.getName(), Level.DEBUG);
             Configurator.setLevel(Utils.class.getName(), Level.DEBUG);
         }
 
         if (cmd.hasOption('t')) {
-            Configurator.setLevel(CreateClient.class.getName(), Level.OFF);
+            Configurator.setLevel(TestClient.class.getName(), Level.OFF);
             Configurator.setLevel(GetBalanceClient.class.getName(), Level.OFF);
             Configurator.setLevel(TransferClient.class.getName(), Level.OFF);
             Configurator.setLevel(Utils.class.getName(), Level.OFF);

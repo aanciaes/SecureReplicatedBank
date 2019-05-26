@@ -24,12 +24,15 @@ public class GetBalanceClient {
 
     private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
 
+
     /**
+     * /**
      * Client that returns the balance of a user
      *
      * @param faults      Number of fault that the client wants to tolerate
      * @param target      WebTarget to the server
      * @param userKeyPair User public and private key
+     * @param homoKey     Key used for homomorphic decryption (HomoAdd, HomoOpeInt)
      */
     @SuppressWarnings("Duplicates")
     public static void getBalance(WebTarget target, int faults, KeyPair userKeyPair, String homoKey) {
@@ -50,12 +53,10 @@ public class GetBalanceClient {
                     .get();
 
             int status = response.getStatus();
-            logger.info("Get Balance Status: " + status);
+            logger.debug("Get Balance Status: " + status);
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
-                logger.info("Current Balance: " + clientResponse.getBody());
-
                 int conflicts = Utils.verifyReplicaResponse(nonce, clientResponse, WalletOperationType.GET_BALANCE);
 
                 if (conflicts > faults) {
@@ -67,19 +68,16 @@ public class GetBalanceClient {
                     switch (tv.getType()) {
                         case WALLET:
                             logger.info("Balance: " + tv.getAmountAsDouble());
-                            System.out.println("Balance: " + tv.getAmountAsDouble());
                             break;
 
                         case HOMO_ADD:
                             PaillierKey paillierKey = (PaillierKey) HelpSerial.fromString(homoKey);
                             logger.info("Balance: " + HomoAdd.decrypt(tv.getAmountAsBigInteger(), paillierKey));
-                            System.out.println("Balance: " + HomoAdd.decrypt(tv.getAmountAsBigInteger(), paillierKey));
                             break;
 
                         case HOMO_OPE_INT:
                             HomoOpeInt ope = new HomoOpeInt(homoKey);
                             logger.info("Balance: " + ope.decrypt(tv.getAmountAsLong()));
-                            System.out.println("Balance: " + ope.decrypt(tv.getAmountAsLong()));
                             break;
 
                         default:
@@ -89,7 +87,6 @@ public class GetBalanceClient {
                 }
             } else {
                 logger.info(response.getStatusInfo().getReasonPhrase());
-                System.out.println(response.getStatus());
             }
         } catch (Exception e) {
             e.printStackTrace();

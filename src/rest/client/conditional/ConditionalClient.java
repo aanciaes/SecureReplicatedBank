@@ -1,8 +1,6 @@
-package rest.client;
+package rest.client.conditional;
 
 import com.google.gson.Gson;
-import hlib.hj.mlib.HomoAdd;
-import java.math.BigInteger;
 import java.util.List;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -12,7 +10,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
-import rest.client.get.GetBalanceClient;
 import rest.server.model.ClientConditionalUpd;
 import rest.server.model.ClientResponse;
 import rest.server.model.WalletOperationType;
@@ -21,8 +18,18 @@ import rest.utils.Utils;
 
 public class ConditionalClient {
 
-    private static Logger logger = LogManager.getLogger(GetBalanceClient.class.getName());
+    private static Logger logger = LogManager.getLogger(ConditionalClient.class.getName());
 
+    /**
+     * Client that performs conditional update
+     *
+     * @param target             Service url
+     * @param faults             Number of faults that the client wants to tolerate
+     * @param condKey            User id of the user to perform the check condition
+     * @param condValue          Amount to check with condKey user
+     * @param conditionalUpdates List of updates to make if condition is true
+     * @param condition          type of condition
+     */
     public static void conditional_upd(WebTarget target, int faults, String condKey, Double condValue, List<Update> conditionalUpdates, int condition) {
         try {
             Configurator.setLevel(Utils.class.getName(), Level.INFO);
@@ -47,10 +54,9 @@ public class ConditionalClient {
                     logger.error("Conflicts found, operation is not accepted by the client");
                 } else {
                     String res = (String) clientResponse.getBody();
-                    System.out.println(res);
+                    logger.info(res);
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }

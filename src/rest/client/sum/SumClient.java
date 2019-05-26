@@ -6,28 +6,34 @@ import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.HomoOpeInt;
 import hlib.hj.mlib.PaillierKey;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import rest.client.create.CreateClient;
-import rest.server.model.*;
-import rest.utils.Utils;
-
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.util.Base64;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.util.Base64;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import rest.server.model.ClientResponse;
+import rest.server.model.ClientSumRequest;
+import rest.server.model.DataType;
+import rest.server.model.TypedValue;
+import rest.server.model.WalletOperationType;
+import rest.utils.Utils;
 
 public class SumClient {
-    private static Logger logger = LogManager.getLogger(CreateClient.class.getName());
+    private static Logger logger = LogManager.getLogger(SumClient.class.getName());
+
     /**
-     * Client that adds money to a user.
+     * Client that performs the sum
      *
-     * @param target               WebTarget to the server
-     * @param faults               Number of fault that the client wants to tolerate
-     * @param amount               amount to add to the user
+     * @param target   WebTarget to the server
+     * @param faults   Number of fault that the client wants to tolerate
+     * @param kp       Key Pair of the destination user
+     * @param dataType Data type of the destination user
+     * @param amount   Amount to sum to account
+     * @param key      Key used for homomorphic encryption/decryption (HomoAdd, HomoOpeInt)
      */
     @SuppressWarnings("Duplicates")
     public static void sumMoney(WebTarget target, int faults, KeyPair kp, DataType dataType, String amount, String key) {
@@ -44,12 +50,12 @@ public class SumClient {
                 paillierKey = (PaillierKey) HelpSerial.fromString(key);
                 amount = HomoAdd.encrypt(new BigInteger(amount), paillierKey).toString();
                 clientRequest.setNsquare(paillierKey.getNsquare().toString());
-            }else if(dataType == DataType.HOMO_OPE_INT){
+            } else if (dataType == DataType.HOMO_OPE_INT) {
                 homoOpeInt = new HomoOpeInt(key);
                 amount = ((Long) homoOpeInt.encrypt(Integer.parseInt(amount))).toString();
             }
 
-            TypedValue clientTv = new TypedValue (amount, dataType, null, null);
+            TypedValue clientTv = new TypedValue(amount, dataType, null, null);
             clientRequest.setTypedValue(clientTv);
 
             // Nonce to randomise message encryption
@@ -68,7 +74,7 @@ public class SumClient {
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
             int status = response.getStatus();
-            logger.info("Sum Money Status: " + status);
+            logger.debug("Sum Money Status: " + status);
 
             if (status == 200) {
                 ClientResponse clientResponse = response.readEntity(ClientResponse.class);
@@ -80,16 +86,16 @@ public class SumClient {
 
                 if (conflicts > faults) {
                     logger.error("Conflicts found, operation is not accepted by the client");
-                }else{
+                } else {
                     String responseAmount = responseValue.getAmount();
                     if (dataType == DataType.HOMO_ADD) {
                         responseAmount = HomoAdd.decrypt(responseValue.getAmountAsBigInteger(), paillierKey).toString();
                     }
                     if (dataType == DataType.HOMO_OPE_INT) {
-                        responseAmount = ((Integer)homoOpeInt.decrypt(responseValue.getAmountAsLong())).toString();
+                        responseAmount = ((Integer) homoOpeInt.decrypt(responseValue.getAmountAsLong())).toString();
                     }
 
-                    System.out.println("Balance after sum: " + responseAmount);
+                    logger.info("Balance after sum: " + responseAmount);
                 }
             } else {
                 logger.info(response.getStatusInfo().getReasonPhrase());
