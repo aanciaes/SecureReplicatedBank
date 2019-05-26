@@ -39,12 +39,7 @@ import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
-import rest.sgx.model.GetBetweenResponse;
-import rest.sgx.model.SGXClientSumRequest;
-import rest.sgx.model.SGXConditionalUpdateRequest;
-import rest.sgx.model.SGXGetBetweenRequest;
-import rest.sgx.model.SGXResponse;
-import rest.sgx.model.TypedKey;
+import rest.sgx.model.*;
 import rest.utils.Update;
 import rest.utils.Utils;
 
@@ -432,31 +427,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         if (db.containsKey(clientConditionalUpd.getCondKey())) {
 
             if (checkCondition(db.get(clientConditionalUpd.getCondKey()), clientConditionalUpd.getCondValue(), clientConditionalUpd.getCondition())) {
-                //TODO
                 applyUpdates(clientConditionalUpd.getUpdatesList());
-                return new ReplicaResponse(200, "Condition holds, Updates Performed", null, (nonce + 1), null);
+                return new ReplicaResponse(200, "Condition holds, Updates Performed", "Condition holds, Updates Performed", (nonce + 1), operationType);
             } else {
                 return new ReplicaResponse(412, "Pre condition failed", null, 0L, null);
             }
-
-
-            /*db.forEach((String key, TypedValue tv) ->{
-                switch (tv.getType()){
-                    case HOMO_ADD:
-                        conditional_upd_homoAdd(clientConditionalUpd);
-                    case HOMO_OPE_INT:
-                        conditional_upd_homoOpeInt(clientConditionalUpd);
-                    case WALLET:
-                        conditional_upd_wallet(clientConditionalUpd, key, tv);
-                    //case 3:
-                        //conditional_upd_greaterOrEqual(clientConditionalUpd);
-                    //case 4:
-                        //conditional_upd_lower(clientConditionalUpd);
-                    //case 5:
-                        //conditional_upd_lowerOrEqual(clientConditionalUpd);
-                    default:
-                }
-            });*/
         } else {
             return new ReplicaResponse(404, "Account does not exist: " + clientConditionalUpd.getCondKey(), null, 0L, null);
         }
@@ -519,7 +494,7 @@ public class ReplicaServer extends DefaultSingleRecoverable {
             if (tv.getType() == DataType.WALLET){
                 applyUpdateLocally(update);
             } else {
-                applyUpdateOnSecureSgx();
+                applyUpdateOnSecureSgx(update, tv);
             }
         }
     }
@@ -539,8 +514,23 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         }
     }
 
-    private void applyUpdateOnSecureSgx () {
+    private void applyUpdateOnSecureSgx (Update update, TypedValue typedValue) {
+        SGXApplyUpdateRequest updateRequest = new SGXApplyUpdateRequest(typedValue, update.getValue(), update.getOp());
 
+        Client client = ClientBuilder.newBuilder()
+                .hostnameVerifier(new Utils.InsecureHostnameVerifier())
+                .build();
+
+        URI baseURI = UriBuilder.fromUri("https://0.0.0.0:6699/sgx").build();
+        WebTarget target = client.target(baseURI);
+        Gson gson = new Gson();
+        String json = gson.toJson(updateRequest);
+
+        Response response = target.path("/applyConditionUpdate").request()
+                .post(Entity.entity(json, MediaType.APPLICATION_JSON));
+
+        SGXResponse sgxResponse = response.readEntity(SGXResponse.class);
+        typedValue.setAmount((String) sgxResponse.getBody());
     }
 
 

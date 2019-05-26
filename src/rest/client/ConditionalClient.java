@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rest.client.get.GetBalanceClient;
 import rest.server.model.ClientConditionalUpd;
+import rest.server.model.ClientResponse;
 import rest.utils.Update;
 import rest.utils.Utils;
 
@@ -28,7 +29,7 @@ public class ConditionalClient {
             Response response = target.path("/conditional_upd").request().header("nonce", nonce)
                     .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
-            System.out.println(response);
+            System.out.println(response.readEntity(ClientResponse.class).getBody());
 
         } catch (Exception e) {
             e.printStackTrace();

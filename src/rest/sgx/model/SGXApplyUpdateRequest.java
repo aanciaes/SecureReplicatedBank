@@ -2,29 +2,21 @@ package rest.sgx.model;
 
 import rest.server.model.TypedValue;
 
-public class SGXApplyUpdateRequest {
+import java.io.Serializable;
 
-    private int operation;
-    private int value;
+public class SGXApplyUpdateRequest implements Serializable {
+
     private TypedValue typedValue;
+    private String value;
+    private int operation;
 
     public SGXApplyUpdateRequest() {
     }
 
-    public int getOperation() {
-        return operation;
-    }
-
-    public void setOperation(int operation) {
-        this.operation = operation;
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    public void setValue(int value) {
+    public SGXApplyUpdateRequest(TypedValue typedValue, String value, int operation) {
+        this.typedValue = typedValue;
         this.value = value;
+        this.operation = operation;
     }
 
     public TypedValue getTypedValue() {
@@ -33,5 +25,21 @@ public class SGXApplyUpdateRequest {
 
     public void setTypedValue(TypedValue typedValue) {
         this.typedValue = typedValue;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public int getOperation() {
+        return operation;
+    }
+
+    public void setOperation(int operation) {
+        this.operation = operation;
     }
 }

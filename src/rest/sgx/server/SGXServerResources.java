@@ -66,7 +66,6 @@ public class SGXServerResources implements SGXServerInterface {
                     byte[] paillierKey = Base64.getDecoder().decode(value.getEncodedHomoKey());
 
                     byte[] decryptedSymKey = Utils.decrypt("RSA", "SunJCE", privateKey, symKey);
-                    System.out.println("sym key: " + Base64.getEncoder().encodeToString(decryptedSymKey));
 
                     SecretKey secretKey = new SecretKeySpec(decryptedSymKey, 0, decryptedSymKey.length, "AES");
                     byte[] decryptedPaillierKeyBytes = Utils.decrypt("AES", "SunJCE", secretKey, paillierKey);
@@ -108,6 +107,23 @@ public class SGXServerResources implements SGXServerInterface {
 
     @Override
     public synchronized SGXResponse applyConditionUpdate (SGXApplyUpdateRequest sgxApplyUpdateRequest) {
+        TypedValue tv = sgxApplyUpdateRequest.getTypedValue();
+
+        switch (tv.getType()){
+            case HOMO_ADD:
+                BigInteger homoAddValue = getHomoAddBalance(tv);
+                BigInteger newBalance = applyHomoAddUpdate(homoAddValue, sgxApplyUpdateRequest.getValue(), sgxApplyUpdateRequest.getOperation());
+
+                BigInteger newBalanceEncrypted = encryptHomoAddValue (newBalance, tv);
+
+                return new SGXResponse(200, newBalanceEncrypted.toString());
+            case HOMO_OPE_INT:
+                Integer homoOppValue = getHomoOpeIntBalance(tv);
+                break;
+                default:
+                    break;
+        }
+
         return new SGXResponse(500, "Not implemented yet");
     }
 
@@ -119,7 +135,6 @@ public class SGXServerResources implements SGXServerInterface {
             byte[] paillierKey = Base64.getDecoder().decode(typedValue.getEncodedHomoKey());
 
             byte[] decryptedSymKey = Utils.decrypt("RSA", "SunJCE", privateKey, symKey);
-            System.out.println("sym key: " + Base64.getEncoder().encodeToString(decryptedSymKey));
 
             SecretKey secretKey = new SecretKeySpec(decryptedSymKey, 0, decryptedSymKey.length, "AES");
             byte[] decryptedPaillierKeyBytes = Utils.decrypt("AES", "SunJCE", secretKey, paillierKey);
@@ -148,7 +163,6 @@ public class SGXServerResources implements SGXServerInterface {
         }
     }
 
-
     private boolean checkCondition (int balance, Double condValue, int condition) {
         switch (condition) {
             case 0:
@@ -165,6 +179,37 @@ public class SGXServerResources implements SGXServerInterface {
                 return balance <= condValue;
             default:
                 return false;
+        }
+    }
+
+    private BigInteger applyHomoAddUpdate (BigInteger currentBalance, String condValue, int operation ) {
+        switch (operation){
+            case 0:
+                return new BigInteger(condValue);
+            case 1:
+                return currentBalance.add(new BigInteger(condValue));
+            default:
+                return null;
+        }
+    }
+
+    private BigInteger encryptHomoAddValue (BigInteger newValue, TypedValue typedValue) {
+        try {
+            PrivateKey privateKey = AdminSgxKeyLoader.loadPrivateKey("sgxPrivateKey.pem");
+
+            byte[] symKey = Base64.getDecoder().decode(typedValue.getEncodedSymKey());
+            byte[] paillierKey = Base64.getDecoder().decode(typedValue.getEncodedHomoKey());
+
+            byte[] decryptedSymKey = Utils.decrypt("RSA", "SunJCE", privateKey, symKey);
+
+            SecretKey secretKey = new SecretKeySpec(decryptedSymKey, 0, decryptedSymKey.length, "AES");
+            byte[] decryptedPaillierKeyBytes = Utils.decrypt("AES", "SunJCE", secretKey, paillierKey);
+
+            PaillierKey pk = (PaillierKey) HelpSerial.fromString(new String(decryptedPaillierKeyBytes));
+
+            return HomoAdd.encrypt(newValue, pk);
+        } catch (Exception e) {
+            return null;
         }
     }
 }
