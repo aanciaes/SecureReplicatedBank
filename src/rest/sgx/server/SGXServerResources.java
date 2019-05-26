@@ -1,6 +1,7 @@
 package rest.sgx.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.HomoOpeInt;
@@ -113,8 +114,9 @@ public class SGXServerResources implements SGXServerInterface {
             case HOMO_ADD:
                 BigInteger homoAddValue = getHomoAddBalance(tv);
                 BigInteger newBalance = applyHomoAddUpdate(homoAddValue, sgxApplyUpdateRequest.getValue(), sgxApplyUpdateRequest.getOperation());
-
+                System.out.println("new balance: " + newBalance );
                 BigInteger newBalanceEncrypted = encryptHomoAddValue (newBalance, tv);
+                System.out.println("enc new balance: " + newBalanceEncrypted );
 
                 return new SGXResponse(200, newBalanceEncrypted.toString());
             case HOMO_OPE_INT:
@@ -195,6 +197,7 @@ public class SGXServerResources implements SGXServerInterface {
 
     private BigInteger encryptHomoAddValue (BigInteger newValue, TypedValue typedValue) {
         try {
+            System.out.println("amount: " + newValue);
             PrivateKey privateKey = AdminSgxKeyLoader.loadPrivateKey("sgxPrivateKey.pem");
 
             byte[] symKey = Base64.getDecoder().decode(typedValue.getEncodedSymKey());
@@ -207,8 +210,14 @@ public class SGXServerResources implements SGXServerInterface {
 
             PaillierKey pk = (PaillierKey) HelpSerial.fromString(new String(decryptedPaillierKeyBytes));
 
-            return HomoAdd.encrypt(newValue, pk);
+            BigInteger b = HomoAdd.encrypt(newValue, pk);
+            BigInteger asd = HomoAdd.encrypt(new BigInteger("400"), pk);
+
+            System.out.println("asd: " + asd);
+
+            return b;
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }

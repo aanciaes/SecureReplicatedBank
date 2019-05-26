@@ -39,7 +39,13 @@ import rest.server.model.DataType;
 import rest.server.model.ReplicaResponse;
 import rest.server.model.TypedValue;
 import rest.server.model.WalletOperationType;
-import rest.sgx.model.*;
+import rest.sgx.model.GetBetweenResponse;
+import rest.sgx.model.SGXApplyUpdateRequest;
+import rest.sgx.model.SGXClientSumRequest;
+import rest.sgx.model.SGXConditionalUpdateRequest;
+import rest.sgx.model.SGXGetBetweenRequest;
+import rest.sgx.model.SGXResponse;
+import rest.sgx.model.TypedKey;
 import rest.utils.Update;
 import rest.utils.Utils;
 
@@ -487,34 +493,24 @@ public class ReplicaServer extends DefaultSingleRecoverable {
         return response.readEntity(Boolean.class);
     }
 
-    private void applyUpdates (List<Update> updates) {
-        for(Update update: updates) {
+    private void applyUpdates(List<Update> updates) {
+        for (Update update : updates) {
             TypedValue tv = db.get(update.getUpdKey());
 
-            if (tv.getType() == DataType.WALLET){
-                applyUpdateLocally(update);
-            } else {
-                applyUpdateOnSecureSgx(update, tv);
+            switch (update.getOp()) {
+                case 0:
+                    tv.setAmount(update.getValue());
+                    break;
+                case 1:
+                    ClientSumRequest clientSumRequest = new ClientSumRequest();
+                    break;
+                default:
+                    break;
             }
         }
     }
 
-    // Only for wallet datatype
-    private void applyUpdateLocally (Update update) {
-        switch (update.getOp()){
-            case 0:
-                db.get(update.getUpdKey()).setAmount(update.getValue());
-                break;
-            case 1:
-                TypedValue tv = db.get(update.getUpdKey());
-                tv.setAmountAsDouble((tv.getAmountAsDouble() + Double.parseDouble(update.getValue())));
-                break;
-            default:
-                break;
-        }
-    }
-
-    private void applyUpdateOnSecureSgx (Update update, TypedValue typedValue) {
+    private void applyUpdateSumOnSecureSgx(Update update, TypedValue typedValue) {
         SGXApplyUpdateRequest updateRequest = new SGXApplyUpdateRequest(typedValue, update.getValue(), update.getOp());
 
         Client client = ClientBuilder.newBuilder()
@@ -530,7 +526,11 @@ public class ReplicaServer extends DefaultSingleRecoverable {
                 .post(Entity.entity(json, MediaType.APPLICATION_JSON));
 
         SGXResponse sgxResponse = response.readEntity(SGXResponse.class);
-        typedValue.setAmount((String) sgxResponse.getBody());
+        String newBalance = (String) sgxResponse.getBody();
+        System.out.println("here: " + newBalance);
+
+        db.get(update.getUpdKey()).setAmount(newBalance);
+        System.out.println(db.get(update.getUpdKey()).getAmount());
     }
 
 

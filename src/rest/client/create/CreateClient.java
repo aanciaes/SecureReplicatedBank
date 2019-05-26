@@ -1,5 +1,7 @@
 package rest.client.create;
 
+import hlib.hj.mlib.HomoOpeInt;
+import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
 import java.util.ArrayList;
@@ -47,8 +49,8 @@ public class CreateClient {
             String opeIntKey = "anotherkey";
 
             //CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "3000");
-            CreateHomoAddClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "5000", pk);
-            //CreateHomoOpeIntClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", opeIntKey);
+            //CreateHomoAddClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "5000", pk);
+            CreateHomoOpeIntClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", opeIntKey);
 
             //SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.HOMO_OPE_INT);
 
@@ -67,8 +69,9 @@ public class CreateClient {
             //GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
 
             List<Update> updates = new ArrayList<>();
-            updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
-            //updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
+            //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400"));
+            //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), HomoAdd.encrypt(new BigInteger("10"), pk).toString()));
+            updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), String.valueOf(new HomoOpeInt(opeIntKey).encrypt(20))));
 
             //0 -> db[cond_key] = cond_value
             //1 -> db[cond_key] != cond_value
@@ -77,9 +80,10 @@ public class CreateClient {
             // 4 -> db[cond_key] < cond_value
             // 5 -> db[cond_key] <= cond_value
             // ir buscar todos os clientes que holdem a condicao passada como variavel e aplicar a lista de updates
-            ConditionalClient.conditional_upd(target, faults, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), 5000.0, updates, 0);
+            ConditionalClient.conditional_upd(target, faults, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), 1000.0, updates, 0);
 
-            GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
+            //GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
+            GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
         } catch (Exception e) {
             e.printStackTrace();
         }

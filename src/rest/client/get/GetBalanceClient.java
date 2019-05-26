@@ -67,6 +67,7 @@ public class GetBalanceClient {
                     switch (tv.getType()) {
                         case WALLET:
                             logger.info("Balance: " + tv.getAmountAsDouble());
+                            System.out.println("Balance: " + tv.getAmountAsDouble());
                             break;
 
                         case HOMO_ADD:
@@ -88,6 +89,7 @@ public class GetBalanceClient {
                 }
             } else {
                 logger.info(response.getStatusInfo().getReasonPhrase());
+                System.out.println(response.getStatus());
             }
         } catch (Exception e) {
             e.printStackTrace();
