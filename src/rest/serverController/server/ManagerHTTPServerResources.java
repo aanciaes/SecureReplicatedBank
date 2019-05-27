@@ -29,32 +29,6 @@ public class ManagerHTTPServerResources implements ManagerServer {
             return;
         }
         try {
-            //java -cp projectJar/lab1.jar rest.server.httpHandler.WalletJdkHttpServer -id 0 -p 8080
-
-            File file = new File("projectJar/project-v2.2.jar");
-            String path = file.getPath();
-            /*URL[] classLoaderUrls = new URL[]{new URL("file://" + path)};
-            // Create a new URLClassLoader
-            URLClassLoader urlClassLoader = new URLClassLoader(classLoaderUrls);
-            final Class<?> clazz = Class.forName("rest.server.httpHandler.WalletJdkHttpServer");
-            final Method method = clazz.getMethod("main", String[].class);
-*/
-            final Object[] arg = new Object[4];
-            arg[0] = "-p";
-            arg[1] = adminServerRequest.getServerPort();
-            arg[2] = "-id";
-            arg[3] = adminServerRequest.getServerId();
-            if (adminServerRequest.isDebug()) {
-                arg[4] = "-d";
-            }
-            if (adminServerRequest.isTestMode()) {
-                arg[5] = "-t";
-            }
-            if (adminServerRequest.isUnpredictable()) {
-                arg[6] = "-u";
-            }
-            //method.invoke(null, arg);
-            //Process -> get process
             ProcessBuilder pb = new ProcessBuilder("java", "-cp", "projectJar/project-v2.2.jar", "rest.server.httpHandler.WalletJdkHttpServer", "-id", "" + adminServerRequest.getServerId(), "-p", "" + adminServerRequest.getServerPort());
             Process p = pb.start();
             processes.put(adminServerRequest.getServerId(), p);

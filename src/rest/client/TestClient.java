@@ -89,13 +89,12 @@ public class TestClient {
             //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), String.valueOf(new HomoOpeInt(opeIntKey).encrypt(20)), null));
             //updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), String.valueOf(new HomoOpeInt(opeIntKey).encrypt(20)), null));
 
-            //0 -> db[cond_key] = cond_value
-            //1 -> db[cond_key] != cond_value
-            // 2 -> db[cond_key] > cond_value
-            // 3 -> db[cond_key] >= cond_value
-            // 4 -> db[cond_key] < cond_value
-            // 5 -> db[cond_key] <= cond_value
-            // ir buscar todos os clientes que holdem a condicao passada como variavel e aplicar a lista de updates
+            //0 =
+            //1 !=
+            //2 >
+            //3 >=
+            //4 <
+            //5 <=
             ConditionalClient.conditional_upd(target, faults, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), 1000.0, updates, 2);
 
             //GetBalanceClient.getBalance(target, faults, kp, null);
