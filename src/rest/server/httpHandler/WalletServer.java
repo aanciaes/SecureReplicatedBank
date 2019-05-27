@@ -1,7 +1,5 @@
 package rest.server.httpHandler;
 
-import rest.server.model.*;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -12,6 +10,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import rest.server.model.ClientConditionalUpd;
+import rest.server.model.ClientCreateRequest;
+import rest.server.model.ClientResponse;
+import rest.server.model.ClientSumRequest;
+import rest.server.model.ClientTransferRequest;
+import rest.server.model.DataType;
 
 /**
  * Wallet Server API
@@ -86,13 +90,13 @@ public interface WalletServer {
     @Path("/sum")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse sum (@Context HttpHeaders headers, ClientSumRequest clientSumRequest);
+    ClientResponse sum(@Context HttpHeaders headers, ClientSumRequest clientSumRequest);
 
     @POST
     @Path("/set")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientResponse setBalance (@Context HttpHeaders headers, ClientCreateRequest clientSetRequest);
+    ClientResponse setBalance(@Context HttpHeaders headers, ClientCreateRequest clientSetRequest);
 
     @POST
     @Path("/conditional_upd")

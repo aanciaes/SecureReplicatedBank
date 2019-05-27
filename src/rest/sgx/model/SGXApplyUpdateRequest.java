@@ -1,8 +1,7 @@
 package rest.sgx.model;
 
-import rest.server.model.TypedValue;
-
 import java.io.Serializable;
+import rest.server.model.TypedValue;
 
 public class SGXApplyUpdateRequest implements Serializable {
 

@@ -1,10 +1,8 @@
 package rest.serverController.client;
 
 import com.google.gson.Gson;
-import rest.utils.AdminSgxKeyLoader;
-import rest.utils.Utils;
-import rest.serverController.model.AdminServerRequest;
-
+import java.net.URI;
+import java.util.Base64;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -12,8 +10,9 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
-import java.util.Base64;
+import rest.serverController.model.AdminServerRequest;
+import rest.utils.AdminSgxKeyLoader;
+import rest.utils.Utils;
 
 public class ManagerClient {
 
@@ -31,7 +30,7 @@ public class ManagerClient {
             Gson gson = new Gson();
             WebTarget target = client.target(baseURI);
 
-            AdminServerRequest adminRequest = new AdminServerRequest(3, 8060, false, false, false,1);
+            AdminServerRequest adminRequest = new AdminServerRequest(0, 8080, false, false, false, 1);
             adminRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(adminRequest.getSerializeMessage().getBytes());
@@ -48,5 +47,4 @@ public class ManagerClient {
             e.printStackTrace();
         }
     }
-
 }

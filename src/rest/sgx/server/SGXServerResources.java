@@ -95,6 +95,8 @@ public class SGXServerResources implements SGXServerInterface {
 
     @Override
     public synchronized boolean compare(SGXConditionalUpdateRequest sgxClientRequest) {
+        logger.info("Protected compare operation");
+
         TypedValue tv = sgxClientRequest.getTypedValue();
 
         switch (tv.getType()) {

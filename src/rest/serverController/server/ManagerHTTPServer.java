@@ -1,15 +1,10 @@
 package rest.serverController.server;
 
-import org.apache.commons.cli.*;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
-import org.glassfish.jersey.server.ResourceConfig;
-import rest.server.replica.ReplicaServer;
-
+import java.net.URI;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
+import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
+import org.glassfish.jersey.server.ResourceConfig;
 
 public class ManagerHTTPServer {
 
