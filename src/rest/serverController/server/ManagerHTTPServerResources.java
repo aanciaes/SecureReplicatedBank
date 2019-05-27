@@ -150,12 +150,13 @@ public class ManagerHTTPServerResources implements ManagerServer {
                 BufferedReader reader =
                         new BufferedReader(new InputStreamReader(process.getErrorStream()));
                 String errorLine = null;
-                while ( (errorLine = reader.readLine()) != null) {
+                while (process.isAlive() && (errorLine = reader.readLine()) != null) {
                     System.out.println("Process id: " + id + ": " + errorLine);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            System.out.println("Exiting Stderr of process: " + id + "...");
         }
     }
 
@@ -175,12 +176,13 @@ public class ManagerHTTPServerResources implements ManagerServer {
                 BufferedReader reader =
                         new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String errorLine = null;
-                while ( (errorLine = reader.readLine()) != null) {
+                while (process.isAlive() && (errorLine = reader.readLine()) != null) {
                     System.out.println("Process id: " + id + ": " + errorLine);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            System.out.println("Exiting Stdout of process: " + id + "...");
         }
     }
 }
