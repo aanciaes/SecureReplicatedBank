@@ -1,9 +1,15 @@
 package rest.client;
 
+import hlib.hj.mlib.HelpSerial;
 import hlib.hj.mlib.HomoAdd;
 import hlib.hj.mlib.PaillierKey;
+
+import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -20,7 +26,9 @@ import rest.client.get.GetBalanceClient;
 import rest.client.get.GetBetweenClient;
 import rest.client.set.SetBalanceClient;
 import rest.client.sum.SumClient;
+import rest.server.model.DataType;
 import rest.utils.AdminSgxKeyLoader;
+import rest.utils.Update;
 import rest.utils.Utils;
 
 /**
@@ -50,8 +58,8 @@ public class TestClient {
             PaillierKey pk = HomoAdd.generateKey();
             String opeIntKey = "anotherkey";
 
-            CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000");
-            //CreateHomoAddClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", pk);
+            //CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000");
+            CreateHomoAddClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", pk);
             //CreateHomoOpeIntClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", opeIntKey);
 
             //SetBalanceClient.setBalance(target, faults, kp, opeIntKey, "12", DataType.WALLET);
@@ -63,20 +71,20 @@ public class TestClient {
             //GetBetweenClient.getBalanceBetween(target, faults, opeIntKey, DataType.HOMO_OPE_INT, 980, 1200, null);
 
             //SumClient.sumMoney(target, faults, kp, DataType.WALLET, "1000", null);
-            //SumClient.sumMoney(target, faults, kp, DataType.HOMO_ADD, "1000", HelpSerial.toString(pk));
+            SumClient.sumMoney(target, faults, kp, DataType.HOMO_ADD, "1000", HelpSerial.toString(pk));
             //SumClient.sumMoney(target, faults, kp, DataType.HOMO_OPE_INT, "1000", opeIntKey);
 
             //GetBalanceClient.getBalance(target, faults, kp,  null);
             //GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
             //GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
 
-            //List<Update> updates = new ArrayList<>();
+            List<Update> updates = new ArrayList<>();
 
             //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400", null));
-            //updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "400", null));
+            //updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), "200", null));
 
-            //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), HomoAdd.encrypt(new BigInteger("10"), pk).toString(), pk.getNsquare().toString()));
-            //updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), HomoAdd.encrypt(new BigInteger("10"), pk).toString(), pk.getNsquare().toString()));
+            updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), HomoAdd.encrypt(new BigInteger("10"), pk).toString(), pk.getNsquare().toString()));
+            updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), HomoAdd.encrypt(new BigInteger("10"), pk).toString(), pk.getNsquare().toString()));
 
             //updates.add(new Update(0, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), String.valueOf(new HomoOpeInt(opeIntKey).encrypt(20)), null));
             //updates.add(new Update(1, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), String.valueOf(new HomoOpeInt(opeIntKey).encrypt(20)), null));
@@ -88,10 +96,10 @@ public class TestClient {
             // 4 -> db[cond_key] < cond_value
             // 5 -> db[cond_key] <= cond_value
             // ir buscar todos os clientes que holdem a condicao passada como variavel e aplicar a lista de updates
-            //ConditionalClient.conditional_upd(target, faults, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), 1000.0, updates, 0);
+            ConditionalClient.conditional_upd(target, faults, Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), 1000.0, updates, 2);
 
             //GetBalanceClient.getBalance(target, faults, kp, null);
-            //GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
+            GetBalanceClient.getBalance(target, faults, kp, HelpSerial.toString(pk));
             //GetBalanceClient.getBalance(target, faults, kp, opeIntKey);
         } catch (Exception e) {
             e.printStackTrace();
