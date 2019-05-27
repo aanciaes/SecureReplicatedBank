@@ -20,6 +20,7 @@ import rest.client.get.GetBalanceClient;
 import rest.client.get.GetBetweenClient;
 import rest.client.set.SetBalanceClient;
 import rest.client.sum.SumClient;
+import rest.utils.AdminSgxKeyLoader;
 import rest.utils.Utils;
 
 /**
@@ -49,7 +50,7 @@ public class TestClient {
             PaillierKey pk = HomoAdd.generateKey();
             String opeIntKey = "anotherkey";
 
-            //CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000");
+            CreateWalletClient.addMoney(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000");
             //CreateHomoAddClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", pk);
             //CreateHomoOpeIntClient.createAccount(target, faults, AdminSgxKeyLoader.loadPrivateKey("adminPrivateKey"), kp.getPublic(), "1000", opeIntKey);
 

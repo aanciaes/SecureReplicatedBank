@@ -1,7 +1,9 @@
 package rest.serverController.server;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -56,6 +58,9 @@ public class ManagerHTTPServerResources implements ManagerServer {
             ProcessBuilder pb = new ProcessBuilder("java", "-cp", "projectJar/project-v2.2.jar", "rest.server.httpHandler.WalletJdkHttpServer", "-id", "" + adminServerRequest.getServerId(), "-p", "" + adminServerRequest.getServerPort());
             Process p = pb.start();
             processes.put(adminServerRequest.getServerId(), p);
+
+            new Thread(new ProcessIOErrorAttacher(adminServerRequest.getServerId(), p)).start();
+            new Thread(new ProcessIOStdoutAttacher(adminServerRequest.getServerId(), p)).start();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -129,4 +134,53 @@ public class ManagerHTTPServerResources implements ManagerServer {
         }
     }
 
+    public class ProcessIOErrorAttacher implements Runnable {
+
+        private int id;
+        private Process process;
+
+        ProcessIOErrorAttacher (int id, Process process) {
+            this.id = id;
+            this.process = process;
+        }
+
+        @Override
+        public void run() {
+            try {
+                BufferedReader reader =
+                        new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                String errorLine = null;
+                while ( (errorLine = reader.readLine()) != null) {
+                    System.out.println("Process id: " + id + ": " + errorLine);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public class ProcessIOStdoutAttacher implements Runnable {
+
+        private int id;
+        private Process process;
+
+        ProcessIOStdoutAttacher (int id, Process process) {
+            this.id = id;
+            this.process = process;
+        }
+
+        @Override
+        public void run() {
+            try {
+                BufferedReader reader =
+                        new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String errorLine = null;
+                while ( (errorLine = reader.readLine()) != null) {
+                    System.out.println("Process id: " + id + ": " + errorLine);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

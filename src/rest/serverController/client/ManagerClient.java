@@ -30,7 +30,7 @@ public class ManagerClient {
             Gson gson = new Gson();
             WebTarget target = client.target(baseURI);
 
-            AdminServerRequest adminRequest = new AdminServerRequest(3, 8060, false, false, false, 1);
+            AdminServerRequest adminRequest = new AdminServerRequest(1, 8090, false, false, false, 1);
             adminRequest.setNonce(Utils.generateNonce());
 
             byte[] hashedMessage = Utils.hashMessage(adminRequest.getSerializeMessage().getBytes());
