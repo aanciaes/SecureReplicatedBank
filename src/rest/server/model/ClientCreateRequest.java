@@ -6,6 +6,7 @@ import java.io.Serializable;
  * Input class of the add money request
  */
 public class ClientCreateRequest implements Serializable {
+
     private String toPubKey;
     private TypedValue typedValue;
     private Long nonce;

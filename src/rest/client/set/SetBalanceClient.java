@@ -36,7 +36,7 @@ public class SetBalanceClient {
      * @param dataType Datatype of the request
      */
     @SuppressWarnings("Duplicates")
-    public static void setBalance(WebTarget target, int faults, KeyPair kp, String homoKey, String amount, DataType dataType) {
+    public static synchronized void setBalance(WebTarget target, int faults, KeyPair kp, String homoKey, String amount, DataType dataType) {
         try {
             String toPubkString = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
             switch (dataType) {

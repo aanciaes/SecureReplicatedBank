@@ -35,7 +35,7 @@ public class GetBalanceClient {
      * @param homoKey     Key used for homomorphic decryption (HomoAdd, HomoOpeInt)
      */
     @SuppressWarnings("Duplicates")
-    public static void getBalance(WebTarget target, int faults, KeyPair userKeyPair, String homoKey) {
+    public static synchronized void getBalance(WebTarget target, int faults, KeyPair userKeyPair, String homoKey) {
         try {
             String userKeyString = Base64.getEncoder().encodeToString(userKeyPair.getPublic().getEncoded());
 
