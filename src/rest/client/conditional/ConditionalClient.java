@@ -30,7 +30,7 @@ public class ConditionalClient {
      * @param conditionalUpdates List of updates to make if condition is true
      * @param condition          type of condition
      */
-    public static void conditional_upd(WebTarget target, int faults, String condKey, Double condValue, List<Update> conditionalUpdates, int condition) {
+    public static synchronized void conditional_upd(WebTarget target, int faults, String condKey, Double condValue, List<Update> conditionalUpdates, int condition) {
         try {
             Configurator.setLevel(Utils.class.getName(), Level.INFO);
 

@@ -27,7 +27,7 @@ public class GetBetweenClient {
      * @param highest   highest
      * @param keyPrefix Match keys with key prefix
      */
-    public static void getBalanceBetween(WebTarget target, int faults, String opeKey, DataType dataType, Integer lowest, Integer highest, String keyPrefix) {
+    public static synchronized void getBalanceBetween(WebTarget target, int faults, String opeKey, DataType dataType, Integer lowest, Integer highest, String keyPrefix) {
         try {
             // Nonce to randomise message encryption
             long nonce = Utils.generateNonce();

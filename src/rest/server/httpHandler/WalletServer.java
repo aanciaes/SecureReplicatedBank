@@ -49,14 +49,14 @@ public interface WalletServer {
     @GET
     @Path("/getbetween")
     @Produces(MediaType.APPLICATION_JSON)
+
+
     ClientResponse getBetween(
             @Context HttpHeaders headers,
             @QueryParam("data_type") DataType dataType,
             @QueryParam("key_prf") String keyPrefix,
             @QueryParam("lowest") Long lowest,
-            @QueryParam("highest") Long highest,
-            @QueryParam("paillier_key") String paillierKey,
-            @QueryParam("sym_key") String symKey
+            @QueryParam("highest") Long highest
     );
 
     /**
